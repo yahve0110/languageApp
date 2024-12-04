@@ -652,12 +652,13 @@ export const dataNew = {
             href: 'https://app.heygen.com/embeds/7cecce1c8c1d46c389425dc2889cc356',
         },
         1: {
-            title: 'Tervitused ja hüvastijätud (Greetings and Farewells)',
+            title: 'Tervitused ja hüvastijätud',
             exercises: [
                 {
-                    type: 'cards',
+                    type: 'Learn words with cards',
                     data: [
                         {
+                            id: '1',
                             from: 'Здравствуйте!',
                             to: 'Tere!',
                             image_url:
@@ -667,6 +668,7 @@ export const dataNew = {
                             description: 'Обычное формальное приветсиве',
                         },
                         {
+                            id: '2',
                             from: 'Добрый день!',
                             to: 'Tere päevast!',
                             description:
@@ -677,6 +679,7 @@ export const dataNew = {
                                 'https://firebasestorage.googleapis.com/v0/b/keelefy.appspot.com/o/lesson1%2Fhello_2.png?alt=media&token=7a28a257-8d06-4888-8ba9-f076c920d16c',
                         },
                         {
+                            id: '3',
                             from: 'Доброе утро!',
                             to: 'Tere hommikust!',
                             description: 'Приветсвие утром',
@@ -686,6 +689,7 @@ export const dataNew = {
                                 'https://firebasestorage.googleapis.com/v0/b/keelefy.appspot.com/o/lesson1%2Fmorning.png?alt=media&token=19595786-ead5-4479-9154-de8da1e5142d',
                         },
                         {
+                            id: '4',
                             from: 'Как дела?',
                             to: 'Kuidas läheb?',
                             audio_url:
@@ -695,6 +699,7 @@ export const dataNew = {
                             description: 'Вопрос об общем состоянии человека',
                         },
                         {
+                            id: '5',
                             from: 'Хорошо!',
                             to: 'Hästi!',
                             audio_url:
@@ -705,6 +710,7 @@ export const dataNew = {
                                 'Ответ на вопрос об общем состоянии человека',
                         },
                         {
+                            id: '6',
                             from: 'Добрый вечер!',
                             to: 'Tere õhtust!',
                             audio_url:
@@ -716,7 +722,7 @@ export const dataNew = {
                     ],
                 },
                 {
-                    type: 'multipleChoice',
+                    type: 'Choose the correct translation in your language',
                     data: [
                         {
                             word: 'Tere',
@@ -802,7 +808,7 @@ export const dataNew = {
                 },
 
                 {
-                    type: 'multipleChoice',
+                    type: 'Choose the correct translation in language you study',
                     data: [
                         {
                             word: 'Здравствуйте',
@@ -887,7 +893,7 @@ export const dataNew = {
                     ],
                 },
                 {
-                    type: 'matching',
+                    type: 'Matching',
                     data: [
                         {
                             wordsFrom: [
@@ -906,7 +912,7 @@ export const dataNew = {
                     ],
                 },
                 {
-                    type: 'buildSentence',
+                    type: 'Build a sentence',
                     data: [
                         {
                             sentence: 'Здравствуйте! ____',

@@ -51,7 +51,7 @@ export default VideoLesson
 
 const styles = StyleSheet.create({
     videoContainer: {
-        height: '40%',
+        height: '100%',
         width: '100%',
         borderRadius: 10,
         backgroundColor: Colors.light.background,
