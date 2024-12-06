@@ -1,15 +1,15 @@
-import React, { useState, useEffect } from 'react'
-import { TouchableOpacity, StyleSheet } from 'react-native'
+import Colors from '@/constants/Colors'
 import { FontAwesome } from '@expo/vector-icons'
 import { Audio } from 'expo-av'
-import Colors from '@/constants/Colors'
+import React, { useEffect, useState } from 'react'
+import { StyleSheet, TouchableOpacity } from 'react-native'
 
 interface Props {
     audioUrl: string
     size?: number
 }
 
-export default function SoundButton({ audioUrl, size = 32 }: Props) {
+export default function SoundButton({ audioUrl, size = 20 }: Props) {
     const [sound, setSound] = useState<Audio.Sound | null>(null)
 
     const handleSoundPress = async () => {
@@ -50,10 +50,10 @@ export default function SoundButton({ audioUrl, size = 32 }: Props) {
 const styles = StyleSheet.create({
     soundButton: {
         padding: 10,
-        borderRadius: 10,
+        borderRadius: '100%',
         aspectRatio: 1,
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: Colors.light.itemsColor,
+        backgroundColor: 'black',
     },
 })

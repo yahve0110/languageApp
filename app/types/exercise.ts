@@ -16,8 +16,8 @@ export interface Card {
 
 export interface MultipleChoiceQuestion {
     word: string
-    image_url?: string
-    audio_url?: string
+    image_url: string
+    audio_url: string
     translations: string[]
     correctWord: string
     type: 'multipleChoice'
