@@ -1,24 +1,38 @@
-import { LessonsData } from '@/app/types/exercise'
-import { Text } from 'react-native'
+import { LessonStep, Card } from '@/app/types/exercise'
 import React from 'react'
-import { TouchableOpacity, View } from 'react-native'
+import { View } from 'react-native'
+import CardsLesson from '@/components/lessons/cardsLesson/cardsLesson'
 
 type Props = {
     setshowHub: React.Dispatch<React.SetStateAction<boolean>>
-    data: LessonsData
+    data: LessonStep
     currentLessonType: string
     lessonId: string
 }
 
 const ExerciseSupervisor = (props: Props) => {
-    const { currentLessonType, lessonId } = props
+    const { currentLessonType, lessonId, data } = props
+    const exerciseData =
+        data.exercises.find((item: any) => item.type === currentLessonType)
+            ?.data || []
+
+    const onComplete = () => {
+        props.setshowHub(true)
+    }
+
+    const exerciseMap = new Map([
+        [
+            'Learn words with cards',
+            <CardsLesson
+                onComplete={onComplete}
+                data={exerciseData as Card[]}
+            />,
+        ],
+    ])
+
     return (
-        <View>
-            <TouchableOpacity onPress={() => props.setshowHub(true)}>
-                <Text>Back to hub</Text>
-            </TouchableOpacity>
-            <Text>{currentLessonType}</Text>
-            <Text>{lessonId}</Text>
+        <View style={{ flex: 1, padding: 20 }}>
+            {exerciseMap.get(currentLessonType)}
         </View>
     )
 }

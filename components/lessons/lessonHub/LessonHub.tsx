@@ -8,7 +8,7 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native'
-import VideoLesson from '../videoLesson/VideoLesson'
+import VideoLesson from '@/components/lessons/videoLesson/VideoLesson'
 
 type Props = {
     setshowHub: React.Dispatch<React.SetStateAction<boolean>>

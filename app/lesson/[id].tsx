@@ -1,4 +1,3 @@
-// @ts-ignore
 import ExerciseSupervisor from '@/components/lessons/exerciseSupervisor/ExerciseSupervisor'
 import LessonHub from '@/components/lessons/lessonHub/LessonHub'
 import Colors from '@/constants/Colors'
@@ -6,6 +5,7 @@ import { dataNew } from '@/data'
 import { useLocalSearchParams } from 'expo-router'
 import { useEffect, useState } from 'react'
 import { BackHandler, StyleSheet, View } from 'react-native'
+import { LessonStep } from '../types/exercise'
 
 export default function LessonScreen() {
     const params = useLocalSearchParams()
@@ -13,13 +13,18 @@ export default function LessonScreen() {
     const [currentLessonType, setCurrentLessonType] = useState('')
 
     const id = params.id
+    const lessonData = dataNew[id as keyof typeof dataNew]
+    const currentStep = '1' // We start with the first step
+    const data = lessonData[
+        currentStep as keyof typeof lessonData
+    ] as LessonStep
 
     useEffect(() => {
         const backHandler = BackHandler.addEventListener(
             'hardwareBackPress',
             () => {
                 if (!showHub) {
-                    // Если мы в ExerciseSupervisor.tsx, то возвращаемся к LessonHub
+                    // Если мы в ExerciseSupervisor, то возвращаемся к LessonHub
                     setshowHub(true)
                     setCurrentLessonType('')
                     return true // Prevent default back button behavior
@@ -31,7 +36,6 @@ export default function LessonScreen() {
 
         return () => backHandler.remove()
     }, [showHub])
-
     return (
         <View style={styles.container}>
             {showHub ? (
@@ -43,7 +47,7 @@ export default function LessonScreen() {
                 />
             ) : (
                 <ExerciseSupervisor
-                    data={dataNew}
+                    data={data}
                     currentLessonType={currentLessonType}
                     setshowHub={setshowHub}
                     lessonId={id as string}
