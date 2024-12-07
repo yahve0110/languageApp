@@ -7,17 +7,40 @@ import { StyleSheet, TouchableOpacity } from 'react-native'
 interface Props {
     audioUrl: string
     size?: number
+    onPlayingStateChange?: (isPlaying: boolean) => void
 }
 
-export default function SoundButton({ audioUrl, size = 20 }: Props) {
+export default function SoundButton({ audioUrl, size = 20, onPlayingStateChange }: Props) {
     const [sound, setSound] = useState<Audio.Sound | null>(null)
+    const [isPlaying, setIsPlaying] = useState(false)
 
     const handleSoundPress = async () => {
         try {
+            if (isPlaying) {
+                if (sound) {
+                    await sound.stopAsync()
+                    setIsPlaying(false)
+                    onPlayingStateChange?.(false)
+                }
+                return
+            }
+
             const { sound: newSound } = await Audio.Sound.createAsync({
                 uri: audioUrl,
             })
+            
+            newSound.setOnPlaybackStatusUpdate((status) => {
+                if (status.isLoaded) {
+                    if (!status.isPlaying && status.didJustFinish) {
+                        setIsPlaying(false)
+                        onPlayingStateChange?.(false)
+                    }
+                }
+            })
+
             await newSound.playAsync()
+            setIsPlaying(true)
+            onPlayingStateChange?.(true)
 
             if (sound) {
                 await sound.unloadAsync()
@@ -25,6 +48,8 @@ export default function SoundButton({ audioUrl, size = 20 }: Props) {
             setSound(newSound)
         } catch (error) {
             console.error('Ошибка воспроизведения:', error)
+            setIsPlaying(false)
+            onPlayingStateChange?.(false)
         }
     }
 
@@ -39,7 +64,7 @@ export default function SoundButton({ audioUrl, size = 20 }: Props) {
     return (
         <TouchableOpacity style={styles.soundButton} onPress={handleSoundPress}>
             <FontAwesome
-                name="volume-up"
+                name={isPlaying ? "stop" : "volume-up"}
                 size={size}
                 color={Colors.light.text}
             />

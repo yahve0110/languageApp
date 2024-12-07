@@ -6,11 +6,12 @@ export default {
         cardsBackground: '#111827',
         itemsColor: '#3b82f6',
         color: '#c5c9cb',
-        green: '#22c55e',
+        green: '#16a34a',
         red: '#ef4444',
         gold: '#eab308',
         tabIconDefault: '#ccc',
         secondaryLight: '#e1e8f2',
+        white: '#fff',
     },
     dark: {
         text: '#dae7fe',

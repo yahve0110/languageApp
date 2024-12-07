@@ -34,10 +34,12 @@ const CardsLesson: React.FC<Props> = (props: Props) => {
     const [flipped, setFlipped] = useState(false)
     const rotation = useSharedValue(0)
     const [currentCard, setCurrentCard] = useState(0)
+    const [isAudioPlaying, setIsAudioPlaying] = useState(false)
 
     console.log(JSON.stringify(data))
 
     const nextCard = () => {
+        if (isAudioPlaying) return
         if (currentCard === data.length - 1) {
             onComplete()
             return
@@ -47,6 +49,7 @@ const CardsLesson: React.FC<Props> = (props: Props) => {
     }
 
     const prevCard = () => {
+        if (isAudioPlaying) return
         setCurrentCard(currentCard - 1)
     }
 
@@ -105,18 +108,23 @@ const CardsLesson: React.FC<Props> = (props: Props) => {
                 </View>
             </TouchableWithoutFeedback>
             <View style={styles.bottomContainer}>
-                <SoundButton audioUrl={data[currentCard].audio_url} />
+                <SoundButton
+                    audioUrl={data[currentCard].audio_url}
+                    onPlayingStateChange={setIsAudioPlaying}
+                />
                 {currentCard === data.length - 1 ? (
                     <>
                         {currentCard > 0 && (
                             <ExerciseNavigationBtn
                                 onPress={prevCard}
                                 text={'prev'}
+                                disabled={isAudioPlaying}
                             />
                         )}
                         <ExerciseNavigationBtn
                             onPress={() => nextCard()}
                             text="Finish"
+                            disabled={isAudioPlaying}
                         />
                     </>
                 ) : (
@@ -125,11 +133,13 @@ const CardsLesson: React.FC<Props> = (props: Props) => {
                             <ExerciseNavigationBtn
                                 onPress={prevCard}
                                 text="prev"
+                                disabled={isAudioPlaying}
                             />
                         )}
                         <ExerciseNavigationBtn
                             onPress={() => nextCard()}
                             text={'next'}
+                            disabled={isAudioPlaying}
                         />
                     </>
                 )}

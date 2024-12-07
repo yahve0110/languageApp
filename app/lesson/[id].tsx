@@ -11,6 +11,7 @@ export default function LessonScreen() {
     const params = useLocalSearchParams()
     const [showHub, setshowHub] = useState(true)
     const [currentLessonType, setCurrentLessonType] = useState('')
+    const [completedExercises, setCompletedExercises] = useState<string[]>([])
 
     const id = params.id
     const lessonData = dataNew[id as keyof typeof dataNew]
@@ -18,6 +19,17 @@ export default function LessonScreen() {
     const data = lessonData[
         currentStep as keyof typeof lessonData
     ] as LessonStep
+
+    const handleExerciseComplete = (type: string) => {
+        setCompletedExercises(prev => {
+            if (!prev.includes(type)) {
+                return [...prev, type]
+            }
+            return prev
+        })
+        setshowHub(true)
+        setCurrentLessonType('')
+    }
 
     useEffect(() => {
         const backHandler = BackHandler.addEventListener(
@@ -34,6 +46,7 @@ export default function LessonScreen() {
 
         return () => backHandler.remove()
     }, [showHub])
+
     return (
         <View style={styles.container}>
             {showHub ? (
@@ -42,6 +55,7 @@ export default function LessonScreen() {
                     setshowHub={setshowHub}
                     setCurrentLessonType={setCurrentLessonType}
                     lessonId={id as string}
+                    completedExercises={completedExercises}
                 />
             ) : (
                 <ExerciseSupervisor
@@ -49,6 +63,7 @@ export default function LessonScreen() {
                     currentLessonType={currentLessonType}
                     setshowHub={setshowHub}
                     lessonId={id as string}
+                    onComplete={() => handleExerciseComplete(currentLessonType)}
                 />
             )}
         </View>

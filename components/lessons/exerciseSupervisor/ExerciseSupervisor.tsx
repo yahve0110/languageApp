@@ -3,29 +3,28 @@ import {
     Card,
     MultipleChoiceQuestion,
     MatchingQuestion,
+    BuildSentenceQuestion,
 } from '@/app/types/exercise'
 import React from 'react'
 import { View } from 'react-native'
 import CardsLesson from '@/components/lessons/cardsLesson/cardsLesson'
 import MultipleChoise from '@/components/lessons/multipleChoise/MultipleChoise'
 import Matching from '@/components/lessons/matching/Matching'
+import BuildSentence from '@/components/lessons/buildSentence/BuildSentence'
 
 type Props = {
-    setshowHub: React.Dispatch<React.SetStateAction<boolean>>
-    data: LessonStep
     currentLessonType: string
     lessonId: string
+    data: LessonStep
+    setshowHub: React.Dispatch<React.SetStateAction<boolean>>
+    onComplete: () => void
 }
 
 const ExerciseSupervisor = (props: Props) => {
-    const { currentLessonType, lessonId, data } = props
+    const { currentLessonType, lessonId, data, onComplete } = props
     const exerciseData =
         data.exercises.find((item: any) => item.type === currentLessonType)
             ?.data || []
-
-    const onComplete = () => {
-        props.setshowHub(true)
-    }
 
     const exerciseMap = new Map([
         [
@@ -53,6 +52,13 @@ const ExerciseSupervisor = (props: Props) => {
             'Matching',
             <Matching
                 data={exerciseData as MatchingQuestion[]}
+                onComplete={onComplete}
+            />,
+        ],
+        [
+            'Build a sentence',
+            <BuildSentence
+                data={exerciseData as BuildSentenceQuestion[]}
                 onComplete={onComplete}
             />,
         ],
