@@ -831,14 +831,41 @@ export const dataNew = {
                             wordsFrom: [
                                 { id: '1', text: 'Здравствйте' },
                                 { id: '2', text: 'Как дела' },
-                                { id: '3', text: 'Хорошо' },
-                                { id: '4', text: 'Доброе утро' },
+                                { id: '3', text: 'Добрый день' },
+                                { id: '4', text: 'Хорошо' },
+                                { id: '5', text: 'Доброе утро' },
                             ],
                             wordsTo: [
-                                { id: '1', text: 'Tere' },
-                                { id: '2', text: 'Kuidas läheb' },
-                                { id: '3', text: 'Hästi' },
-                                { id: '4', text: 'Tere hommikust' },
+                                {
+                                    id: '1',
+                                    text: 'Tere',
+                                    audio_url:
+                                        'https://www.book2.nl/book2/ET/SOUND/0043.mp3',
+                                },
+                                {
+                                    id: '2',
+                                    text: 'Kuidas läheb',
+                                    audio_url:
+                                        'https://www.book2.nl/book2/ET/SOUND/0045.mp3',
+                                },
+                                {
+                                    id: '3',
+                                    text: 'Tere päevast',
+                                    audio_url:
+                                        'https://www.book2.nl/book2/ET/SOUND/0044.mp3',
+                                },
+                                {
+                                    id: '4',
+                                    text: 'Hästi',
+                                    audio_url:
+                                        'https://firebasestorage.googleapis.com/v0/b/keelefy.appspot.com/o/lesson1%2Fh%C3%A4sti%20.mp3?alt=media&token=f43375ae-3581-42bf-a089-a4ed68155ec7',
+                                },
+                                {
+                                    id: '5',
+                                    text: 'Tere hommikust',
+                                    audio_url:
+                                        'https://firebasestorage.googleapis.com/v0/b/keelefy.appspot.com/o/lesson1%2FTere%20hommikust!.mp3?alt=media&token=9f73128f-5552-4117-bba1-64e88c083a3e',
+                                },
                             ],
                         },
                     ],

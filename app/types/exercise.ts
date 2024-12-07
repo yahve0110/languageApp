@@ -24,10 +24,10 @@ export interface MultipleChoiceQuestion {
 }
 
 export interface MatchingQuestion {
-    wordsFrom: { id: string; text: string }[]
-    wordsTo: { id: string; text: string }[]
+    wordsFrom: { id: string; text: string; audio_url: string }[]
+    wordsTo: { id: string; text: string; audio_url: string }[]
     image_url?: string
-    audio_url?: string
+    audio_url: string
 }
 
 export interface BuildSentenceQuestion {

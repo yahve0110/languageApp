@@ -1,8 +1,14 @@
-import { LessonStep, Card, MultipleChoiceQuestion } from '@/app/types/exercise'
+import {
+    LessonStep,
+    Card,
+    MultipleChoiceQuestion,
+    MatchingQuestion,
+} from '@/app/types/exercise'
 import React from 'react'
 import { View } from 'react-native'
 import CardsLesson from '@/components/lessons/cardsLesson/cardsLesson'
 import MultipleChoise from '@/components/lessons/multipleChoise/MultipleChoise'
+import Matching from '@/components/lessons/matching/Matching'
 
 type Props = {
     setshowHub: React.Dispatch<React.SetStateAction<boolean>>
@@ -33,6 +39,20 @@ const ExerciseSupervisor = (props: Props) => {
             'Choose the correct translation in your language',
             <MultipleChoise
                 data={exerciseData as MultipleChoiceQuestion[]}
+                onComplete={onComplete}
+            />,
+        ],
+        [
+            'Choose the correct translation in language you study',
+            <MultipleChoise
+                data={exerciseData as MultipleChoiceQuestion[]}
+                onComplete={onComplete}
+            />,
+        ],
+        [
+            'Matching',
+            <Matching
+                data={exerciseData as MatchingQuestion[]}
                 onComplete={onComplete}
             />,
         ],

@@ -14,7 +14,7 @@ export default function LessonScreen() {
 
     const id = params.id
     const lessonData = dataNew[id as keyof typeof dataNew]
-    const currentStep = '1' // We start with the first step
+    const currentStep = '1'
     const data = lessonData[
         currentStep as keyof typeof lessonData
     ] as LessonStep
@@ -24,12 +24,10 @@ export default function LessonScreen() {
             'hardwareBackPress',
             () => {
                 if (!showHub) {
-                    // Если мы в ExerciseSupervisor, то возвращаемся к LessonHub
                     setshowHub(true)
                     setCurrentLessonType('')
                     return true // Prevent default back button behavior
                 }
-                // Иначе позволяем стандартную навигацию
                 return false
             }
         )
