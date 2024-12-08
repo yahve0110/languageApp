@@ -26,8 +26,14 @@ const LessonHub = (props: Props) => {
     const lessonData = data[lessonId]
 
     const isExerciseLocked = (currentIndex: number, exercises: Exercise[]) => {
-        if (currentIndex === 0) return false
+        // Allow first exercise to be unlocked
+        //if (currentIndex === 0) return false
+        return false
+
+        // Check if previous exercise exists and is completed
         const previousExercise = exercises[currentIndex - 1]
+        if (!previousExercise) return true
+
         return !completedExercises.includes(previousExercise.type)
     }
 

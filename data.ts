@@ -875,6 +875,7 @@ export const dataNew = {
                     data: [
                         {
                             sentence: 'Здравствуйте! Как ваши дела?',
+                            audio_url:"https://firebasestorage.googleapis.com/v0/b/keelefy.appspot.com/o/lesson1%2FtereKuidasLaheb.mp3?alt=media&token=f4dff74d-6855-45b1-80fe-d195655eae59",
                             correctAnswer: 'Tere Kuidas läheb',
                             options: [
                                 'Tere',
@@ -888,6 +889,7 @@ export const dataNew = {
                         },
                         {
                             sentence: 'Добрый день! Как у вас настроение?',
+                            audio_url:"https://firebasestorage.googleapis.com/v0/b/keelefy.appspot.com/o/lesson1%2FterePaevastKuidasTUjuOn.mp3?alt=media&token=5b0e953d-4a1e-47a0-8d74-7f46ba07c366",
                             correctAnswer: 'Tere päevast Kuidas tuju on',
                             options: [
                                 'Tere',
@@ -901,6 +903,7 @@ export const dataNew = {
                         },
                         {
                             sentence: 'Доброе утро! Чем занимаетесь?',
+                            audio_url:"https://firebasestorage.googleapis.com/v0/b/keelefy.appspot.com/o/lesson1%2FtereHommikustMidaTeete.mp3?alt=media&token=377a6aef-06b6-4872-b445-03616dd6901c",
                             correctAnswer: 'Tere hommikust Mida teete',
                             options: [
                                 'Tere',
@@ -914,6 +917,7 @@ export const dataNew = {
                         },
                         {
                             sentence: 'Как дела? Хорошо!',
+                            audio_url:"https://firebasestorage.googleapis.com/v0/b/keelefy.appspot.com/o/lesson1%2FKuidasLahebHsti.mp3?alt=media&token=f1a92a5e-a673-4625-8b75-e282bc4c664e",
                             correctAnswer: 'Kuidas läheb Hästi',
                             options: [
                                 'Kuidas',
@@ -927,6 +931,77 @@ export const dataNew = {
                         },
                         {
                             sentence: 'Добрый вечер! Как у вас дела?',
+                            audio_url:"https://firebasestorage.googleapis.com/v0/b/keelefy.appspot.com/o/lesson1%2FTereOuhtustKuidasLaheb.mp3?alt=media&token=120fdbde-1f26-4e9c-b203-ed61c1897b7d",
+                            correctAnswer: 'Tere õhtust Kuidas läheb',
+                            options: [
+                                'Tere',
+                                'õhtust',
+                                'Kuidas',
+                                'läheb',
+                                'Mis',
+                                'uudist',
+                                'Hästi',
+                            ],
+                        },
+                    ],
+                },
+                {
+                    type: 'Build audioSentence',
+                    data: [
+                        {
+                            audio_url:"https://firebasestorage.googleapis.com/v0/b/keelefy.appspot.com/o/lesson1%2FtereKuidasLaheb.mp3?alt=media&token=f4dff74d-6855-45b1-80fe-d195655eae59",
+                            correctAnswer: 'Tere Kuidas läheb',
+                            options: [
+                                'Tere',
+                                'Kuidas',
+                                'läheb',
+                                'Hästi',
+                                'Terepäevast',
+                                'Mis',
+                                'uudist',
+                            ],
+                        },
+                        {
+                            audio_url:"https://firebasestorage.googleapis.com/v0/b/keelefy.appspot.com/o/lesson1%2FterePaevastKuidasTUjuOn.mp3?alt=media&token=5b0e953d-4a1e-47a0-8d74-7f46ba07c366",
+                            correctAnswer: 'Tere päevast Kuidas tuju on',
+                            options: [
+                                'Tere',
+                                'päevast',
+                                'Kuidas',
+                                'tuju',
+                                'on',
+                                'Mis',
+                                'toimub',
+                            ],
+                        },
+                        {
+                            audio_url:"https://firebasestorage.googleapis.com/v0/b/keelefy.appspot.com/o/lesson1%2FtereHommikustMidaTeete.mp3?alt=media&token=377a6aef-06b6-4872-b445-03616dd6901c",
+                            correctAnswer: 'Tere hommikust Mida teete',
+                            options: [
+                                'Tere',
+                                'hommikust',
+                                'Mida',
+                                'teete',
+                                'Kuidas',
+                                'läheb',
+                                'on',
+                            ],
+                        },
+                        {
+                            audio_url:"https://firebasestorage.googleapis.com/v0/b/keelefy.appspot.com/o/lesson1%2FKuidasLahebHsti.mp3?alt=media&token=f1a92a5e-a673-4625-8b75-e282bc4c664e",
+                            correctAnswer: 'Kuidas läheb Hästi',
+                            options: [
+                                'Kuidas',
+                                'läheb',
+                                'Hästi',
+                                'Mis',
+                                'toimub',
+                                'tuju',
+                                'Tere',
+                            ],
+                        },
+                        {
+                            audio_url:"https://firebasestorage.googleapis.com/v0/b/keelefy.appspot.com/o/lesson1%2FTereOuhtustKuidasLaheb.mp3?alt=media&token=120fdbde-1f26-4e9c-b203-ed61c1897b7d",
                             correctAnswer: 'Tere õhtust Kuidas läheb',
                             options: [
                                 'Tere',

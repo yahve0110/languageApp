@@ -34,8 +34,7 @@ export interface BuildSentenceQuestion {
     sentence: string
     correctAnswer: string
     options: string[]
-    image_url?: string
-    audio_url?: string
+    audio_url: string
 }
 
 export interface Exercise {

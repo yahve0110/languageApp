@@ -11,6 +11,7 @@ import CardsLesson from '@/components/lessons/cardsLesson/cardsLesson'
 import MultipleChoise from '@/components/lessons/multipleChoise/MultipleChoise'
 import Matching from '@/components/lessons/matching/Matching'
 import BuildSentence from '@/components/lessons/buildSentence/BuildSentence'
+import AudioBuildSentence from '../audioBuildSentence/AudioBuildSentence'
 
 type Props = {
     currentLessonType: string
@@ -58,6 +59,13 @@ const ExerciseSupervisor = (props: Props) => {
         [
             'Build a sentence',
             <BuildSentence
+                data={exerciseData as BuildSentenceQuestion[]}
+                onComplete={onComplete}
+            />,
+        ],
+        [
+            'Build audioSentence',
+            <AudioBuildSentence
                 data={exerciseData as BuildSentenceQuestion[]}
                 onComplete={onComplete}
             />,

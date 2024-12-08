@@ -1,7 +1,8 @@
-import { BuildSentenceQuestion } from '@/app/types/exercise'
-import Colors from '@/constants/Colors'
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native'
+import SoundButton from '@/components/shared/SoundButton'
+import Colors from '@/constants/Colors'
+import { BuildSentenceQuestion } from '@/app/types/exercise'
 
 interface Props {
     data: BuildSentenceQuestion[]
@@ -17,6 +18,7 @@ const BuildSentence = (props: Props) => {
     )
     const [incorrectWords, setIncorrectWords] = useState<string[]>([])
     const [isCorrect, setIsCorrect] = useState(false)
+    const [playAudioAutomatically, setPlayAudioAutomatically] = useState(false)
 
     const handleWordPress = (word: string, isFromSentence: boolean) => {
         if (isFromSentence) {
@@ -28,6 +30,7 @@ const BuildSentence = (props: Props) => {
         }
         setIncorrectWords([])
         setIsCorrect(false)
+        setPlayAudioAutomatically(false)
     }
 
     const moveToNextQuestion = () => {
@@ -37,6 +40,7 @@ const BuildSentence = (props: Props) => {
             setAvailableWords(data[currentQuestionIndex + 1].options || [])
             setIncorrectWords([])
             setIsCorrect(false)
+            setPlayAudioAutomatically(false)
         } else {
             onComplete()
         }
@@ -46,7 +50,7 @@ const BuildSentence = (props: Props) => {
         const currentAnswer = selectedWords.join(' ')
         if (currentAnswer === data[currentQuestionIndex].correctAnswer) {
             setIsCorrect(true)
-            setTimeout(moveToNextQuestion, 1500)
+            setPlayAudioAutomatically(true)
         } else {
             const correctWords =
                 data[currentQuestionIndex].correctAnswer.split(' ')
@@ -62,6 +66,16 @@ const BuildSentence = (props: Props) => {
             }, 2000)
         }
     }
+
+    // Automatically check answer when the correct number of words is selected
+    useEffect(() => {
+        const correctAnswerWordCount =
+            data[currentQuestionIndex].correctAnswer.split(' ').length
+        
+        if (selectedWords.length === correctAnswerWordCount) {
+            checkAnswer()
+        }
+    }, [selectedWords])
 
     const currentQuestion = data[currentQuestionIndex]
     const correctAnswerWordCount =
@@ -122,22 +136,19 @@ const BuildSentence = (props: Props) => {
                     ))}
                 </View>
 
-                <TouchableOpacity
-                    style={[
-                        styles.checkButton,
-                        selectedWords.length === correctAnswerWordCount
-                            ? styles.checkButtonActive
-                            : {},
-                    ]}
-                    onPress={checkAnswer}
-                    disabled={
-                        selectedWords.length !== correctAnswerWordCount ||
-                        isCorrect ||
-                        incorrectWords.length > 0
-                    }
-                >
-                    <Text style={styles.checkButtonText}>Check Answer</Text>
-                </TouchableOpacity>
+                {/* Conditionally render SoundButton only when correct and ready to play audio */}
+                {isCorrect && playAudioAutomatically && (
+                    <SoundButton
+                        autoPlay={true}
+                        hide={true}
+                        audioUrl={currentQuestion.audio_url}
+                        onPlayingStateChange={(isPlaying) => {
+                            if (!isPlaying) {
+                                moveToNextQuestion()
+                            }
+                        }}
+                    />
+                )}
             </View>
         </View>
     )
@@ -216,23 +227,6 @@ const styles = StyleSheet.create({
     },
     correctWordText: {
         color: 'white',
-    },
-    checkButton: {
-        position: 'absolute',
-        bottom: 5,
-        backgroundColor: '#ccc',
-        paddingHorizontal: 30,
-        paddingVertical: 15,
-        borderRadius: 25,
-        alignSelf: 'center',
-    },
-    checkButtonActive: {
-        backgroundColor: Colors.light.itemsColor,
-    },
-    checkButtonText: {
-        color: 'white',
-        fontSize: 16,
-        fontWeight: 'bold',
     },
 })
 
