@@ -1015,6 +1015,31 @@ export const dataNew = {
                         },
                     ],
                 },
+                {
+                    type: 'lesson chat',
+                    data: 
+                        {
+                            words: [
+                                'Tere',
+                                'Kuidas',
+                                'läheb',
+                                'Hästi',
+                                'Terepäevast',
+                                'Mis',
+                                'uudist',
+                                'tuju',
+                                'on',
+                                'toimub',
+                                'õhtust',
+                                'hommikust',
+                                'Mida',
+                                'teete',
+                                'head aega',
+                                'nägemist'
+                            ],
+                            theme: "Tervitused ja hüvastijätud eesti keeles. Bot on õpetaja ja peaks simuleerima dialoogi.",
+                        }
+                },
             ],
         },
         2: {

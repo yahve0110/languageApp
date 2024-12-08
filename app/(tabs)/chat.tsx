@@ -10,7 +10,6 @@ import {
 } from 'react-native'
 import axios from 'axios'
 import Colors from '@/constants/Colors'
-import { OPENAI_API_KEY } from '@/config'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 
 interface Message {
@@ -163,7 +162,7 @@ export default function LessonsScreen() {
                 {
                     headers: {
                         'Content-Type': 'application/json',
-                        Authorization: `Bearer ${OPENAI_API_KEY}`,
+                        Authorization: `Bearer ${"lol"}`,
                     },
                 }
             )

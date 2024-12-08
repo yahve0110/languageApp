@@ -37,6 +37,11 @@ export interface BuildSentenceQuestion {
     audio_url: string
 }
 
+export interface LessonChatProps {
+    theme?: string;
+    words?: string[];
+}
+
 export interface Exercise {
     type: ExerciseType
     data:

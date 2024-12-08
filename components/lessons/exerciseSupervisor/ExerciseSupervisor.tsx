@@ -4,6 +4,7 @@ import {
     MultipleChoiceQuestion,
     MatchingQuestion,
     BuildSentenceQuestion,
+    LessonChatProps,
 } from '@/app/types/exercise'
 import React from 'react'
 import { View } from 'react-native'
@@ -12,6 +13,7 @@ import MultipleChoise from '@/components/lessons/multipleChoise/MultipleChoise'
 import Matching from '@/components/lessons/matching/Matching'
 import BuildSentence from '@/components/lessons/buildSentence/BuildSentence'
 import AudioBuildSentence from '../audioBuildSentence/AudioBuildSentence'
+import LessonChat from '../lessonChat/LessonChat'
 
 type Props = {
     currentLessonType: string
@@ -67,6 +69,15 @@ const ExerciseSupervisor = (props: Props) => {
             'Build audioSentence',
             <AudioBuildSentence
                 data={exerciseData as BuildSentenceQuestion[]}
+                onComplete={onComplete}
+            />,
+        ],
+        [
+            'lesson chat',
+            <LessonChat
+                data={
+                    exerciseData as LessonChatProps
+                }
                 onComplete={onComplete}
             />,
         ],
