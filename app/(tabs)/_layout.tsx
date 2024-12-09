@@ -82,8 +82,16 @@ export default function TabLayout() {
               ),
             }}
           />
+               <Tabs.Screen
+            name="flashcards"
+            options={{
+              tabBarIcon: ({ color }) => (
+                <TabBarIcon name="comments" color={color} />
+              ),
+            }}
+          />
           <Tabs.Screen
-            name="chat"
+            name="translator"
             options={{
               tabBarIcon: ({ color }) => (
                 <TabBarIcon name="comments" color={color} />

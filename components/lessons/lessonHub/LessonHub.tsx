@@ -28,7 +28,7 @@ const LessonHub = (props: Props) => {
     const isExerciseLocked = (currentIndex: number, exercises: Exercise[]) => {
         // Allow first exercise to be unlocked
         //if (currentIndex === 0) return false
-        return false
+return false
 
         // Check if previous exercise exists and is completed
         const previousExercise = exercises[currentIndex - 1]
@@ -82,6 +82,7 @@ const LessonHub = (props: Props) => {
                     return (
                         <TouchableOpacity
                             key={ex.type}
+                            activeOpacity={0.9}
                             style={[
                                 styles.exerciseButton,
                                 isLocked && styles.exerciseButtonLocked

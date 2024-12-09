@@ -72,20 +72,17 @@ export default function MultipleChoise({
     const checkAnswer = () => {
         setIsChecked(true)
         playSound()
-
-        // Если ответ неправильный, добавляем текущий вопрос в конец списка
-        if (selectedAnswer !== data[wordIndex].correctWord) {
-            setData((prevData) => {
-                const currentQuestion = { ...prevData[wordIndex] }
-                const newData = prevData.filter(
-                    (_, index) => index !== wordIndex
-                )
-                return [...newData, currentQuestion]
-            })
-        }
     }
 
     const handleNext = () => {
+        if (selectedAnswer !== data[wordIndex].correctWord) {
+            setData((prevData) => {
+                const currentQuestion = { ...prevData[wordIndex] }
+                const newData = prevData.filter((_, index) => index !== wordIndex)
+                return [...newData, currentQuestion]
+            })
+        }
+
         if (wordIndex === data.length - 1) {
             onComplete()
         } else {
