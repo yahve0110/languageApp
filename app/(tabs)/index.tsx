@@ -1,5 +1,5 @@
 import { StyleSheet, View } from 'react-native'
-import MainPage from '@/components/MainPage/MainPage'
+import MainPage from '@/components/pages/MainPage/MainPage'
 
 export default function LessonsScreen() {
     return (

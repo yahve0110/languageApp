@@ -35,7 +35,6 @@ export default function MainPage() {
         { id: 3, level: 'B1', available: false },
         { id: 4, level: 'B2', available: false },
         { id: 5, level: 'C1', available: false },
-        { id: 6, level: 'C2', available: false },
     ]
 
     const scrollToIndex = (index: number) => {
