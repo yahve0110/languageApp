@@ -57,6 +57,8 @@ const Translator = () => {
     const [isReversed, setIsReversed] = useState(false);
     const [folders, setFolders] = useState<Folder[]>([]);
     const [isSelectFolderModalVisible, setIsSelectFolderModalVisible] = useState(false);
+    const [newFolderName, setNewFolderName] = useState('');
+    const [isCreatingFolder, setIsCreatingFolder] = useState(false);
     const OPENAI_API_KEY = 'sk-NuaTm51prqNsgZO3q7n51QHCfD1rknvfP5bx_xXY-lT3BlbkFJ2iA-kJkV8GwS1uaG5s4c46d4AgzmE89SihlF2lr5QA';
 
     const languages: { [key: string]: Language } = {
@@ -207,6 +209,31 @@ const Translator = () => {
         }
     };
 
+    const createNewFolder = async () => {
+        if (!newFolderName.trim()) {
+            Alert.alert('Error', 'Please enter a folder name');
+            return;
+        }
+
+        try {
+            const newFolder: Folder = {
+                id: Date.now().toString(),
+                name: newFolderName.trim(),
+                createdAt: new Date().toISOString(),
+                cardCount: 0
+            };
+
+            const updatedFolders = [...folders, newFolder];
+            await AsyncStorage.setItem('folders', JSON.stringify(updatedFolders));
+            setFolders(updatedFolders);
+            setNewFolderName('');
+            setIsCreatingFolder(false);
+        } catch (error) {
+            console.error('Error creating folder:', error);
+            Alert.alert('Error', 'Failed to create folder');
+        }
+    };
+
     return (
         <KeyboardAvoidingView 
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -217,18 +244,22 @@ const Translator = () => {
             >
                 <View style={styles.header}>
                     <View style={styles.languageSelector}>
-                        <Text style={styles.languageText}>
-                            {getSourceLanguage().name}
-                        </Text>
+                        <View style={styles.languageContainer}>
+                            <Text style={styles.languageText}>
+                                {getSourceLanguage().name}
+                            </Text>
+                        </View>
                         <TouchableOpacity 
                             style={styles.switchButton}
                             onPress={() => setIsReversed(!isReversed)}
                         >
                             <Ionicons name="swap-horizontal" size={24} color={Colors.light.itemsColor} />
                         </TouchableOpacity>
-                        <Text style={styles.languageText}>
-                            {getTargetLanguage().name}
-                        </Text>
+                        <View style={styles.languageContainer}>
+                            <Text style={styles.languageText}>
+                                {getTargetLanguage().name}
+                            </Text>
+                        </View>
                     </View>
                 </View>
 
@@ -320,7 +351,46 @@ const Translator = () => {
                             </TouchableOpacity>
                         </View>
 
-                        {folders.length === 0 ? (
+                        {isCreatingFolder ? (
+                            <View style={styles.createFolderContainer}>
+                                <TextInput
+                                    style={styles.createFolderInput}
+                                    value={newFolderName}
+                                    onChangeText={setNewFolderName}
+                                    placeholder="Enter folder name"
+                                    placeholderTextColor={Colors.light.color}
+                                    autoCapitalize="none"
+                                    autoFocus
+                                />
+                                <View style={styles.createFolderButtons}>
+                                    <TouchableOpacity
+                                        style={[styles.createFolderButton, styles.cancelButton]}
+                                        onPress={() => {
+                                            setIsCreatingFolder(false);
+                                            setNewFolderName('');
+                                        }}
+                                    >
+                                        <Text style={styles.createFolderButtonText}>Cancel</Text>
+                                    </TouchableOpacity>
+                                    <TouchableOpacity
+                                        style={[styles.createFolderButton, styles.confirmButton]}
+                                        onPress={createNewFolder}
+                                    >
+                                        <Text style={styles.createFolderButtonText}>Create</Text>
+                                    </TouchableOpacity>
+                                </View>
+                            </View>
+                        ) : (
+                            <TouchableOpacity
+                                style={styles.createFolderButton}
+                                onPress={() => setIsCreatingFolder(true)}
+                            >
+                                <Ionicons name="add-circle-outline" size={24} color={Colors.light.itemsColor} />
+                                <Text style={styles.createFolderButtonText}>Create New Folder</Text>
+                            </TouchableOpacity>
+                        )}
+
+                        {folders.length === 0 && !isCreatingFolder ? (
                             <View style={styles.emptyState}>
                                 <Ionicons name="folder-open-outline" size={48} color={Colors.light.color} />
                                 <Text style={styles.emptyStateText}>No folders available</Text>
@@ -378,7 +448,7 @@ const styles = StyleSheet.create({
     languageSelector: {
         flexDirection: 'row',
         alignItems: 'center',
-        justifyContent: 'center',
+        justifyContent: 'space-between',
         backgroundColor: Colors.light.itemsColor,
         borderRadius: 16,
         padding: 12,
@@ -388,16 +458,20 @@ const styles = StyleSheet.create({
         shadowRadius: 4,
         elevation: 3,
     },
+    languageContainer: {
+        flex: 1,
+        alignItems: 'center',
+    },
     languageText: {
         fontSize: 16,
         fontWeight: '600',
         color: Colors.light.text,
-        paddingHorizontal: 16,
     },
     switchButton: {
         padding: 8,
         backgroundColor: Colors.light.background,
         borderRadius: 12,
+        marginHorizontal: 12,
     },
     inputContainer: {
         marginHorizontal: 20,
@@ -592,6 +666,43 @@ const styles = StyleSheet.create({
     cardCount: {
         fontSize: 14,
         color: Colors.light.color,
+    },
+    createFolderContainer: {
+        padding: 16,
+        borderBottomWidth: 1,
+        borderBottomColor: Colors.light.itemsColor,
+    },
+    createFolderInput: {
+        backgroundColor: Colors.light.background,
+        borderRadius: 8,
+        padding: 12,
+        marginBottom: 12,
+        fontSize: 16,
+        color: Colors.light.text,
+    },
+    createFolderButtons: {
+        flexDirection: 'row',
+        justifyContent: 'flex-end',
+        gap: 12,
+    },
+    createFolderButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        padding: 12,
+        borderRadius: 8,
+        backgroundColor: Colors.light.background,
+        gap: 8,
+    },
+    cancelButton: {
+        backgroundColor: Colors.light.itemsColor,
+    },
+    confirmButton: {
+        backgroundColor: Colors.light.itemsColor,
+    },
+    createFolderButtonText: {
+        fontSize: 16,
+        fontWeight: '500',
+        color: Colors.light.text,
     },
 });
 

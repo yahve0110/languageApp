@@ -1,22 +1,12 @@
 import { Card } from '@/app/types/exercise'
 import ExerciseNavigationBtn from '@/components/shared/ExerciseNavigationBtn'
+import FlipCard from '@/components/shared/FlipCard'
 import SoundButton from '@/components/shared/SoundButton'
 import Colors from '@/constants/Colors'
-import React, { useState } from 'react'
-import {
-    Dimensions,
-    Image,
-    PixelRatio,
-    StyleSheet,
-    Text,
-    TouchableWithoutFeedback,
-    View,
-} from 'react-native'
-import Animated, {
-    useAnimatedStyle,
-    useSharedValue,
-    withTiming,
-} from 'react-native-reanimated'
+import React, { useState, useEffect } from 'react'
+import { Dimensions, Text, View, StyleSheet, TouchableOpacity } from 'react-native'
+import { Ionicons } from '@expo/vector-icons'
+import AsyncStorage from '@react-native-async-storage/async-storage'
 
 interface Props {
     data: Card[]
@@ -24,19 +14,85 @@ interface Props {
 }
 
 const { width, height } = Dimensions.get('window')
-const scale = PixelRatio.get()
-
-const ITEM_WIDTH = width * 0.7
-const ITEM_HEIGHT = height * 0.6
 
 const CardsLesson: React.FC<Props> = (props: Props) => {
     const { data, onComplete } = props
-    const [flipped, setFlipped] = useState(false)
-    const rotation = useSharedValue(0)
     const [currentCard, setCurrentCard] = useState(0)
     const [isAudioPlaying, setIsAudioPlaying] = useState(false)
+    const [cards, setCards] = useState<Card[]>(data)
 
-    console.log(JSON.stringify(data))
+    // Check if cards are in favorites when component mounts
+    useEffect(() => {
+        const checkFavorites = async () => {
+            try {
+                const cardsJson = await AsyncStorage.getItem('flashcards')
+                if (cardsJson) {
+                    const allCards = JSON.parse(cardsJson)
+                    // Update favorite status for each card
+                    const updatedCards = cards.map(card => ({
+                        ...card,
+                        isFavorite: allCards.some((fc: any) => 
+                            fc.id === card.id && fc.folderId === 'favorites'
+                        )
+                    }))
+                    setCards(updatedCards)
+                }
+            } catch (error) {
+                console.error('Error checking favorites:', error)
+            }
+        }
+        checkFavorites()
+    }, [])
+
+    const toggleFavorite = async () => {
+        try {
+            const currentCardData = cards[currentCard]
+            // Get all flashcards
+            const cardsJson = await AsyncStorage.getItem('flashcards')
+            let allCards = cardsJson ? JSON.parse(cardsJson) : []
+            
+            // Create a new flashcard if it doesn't exist in favorites
+            const newCard = {
+                id: currentCardData.id,
+                word: currentCardData.to,
+                translation: currentCardData.from,
+                fromLanguage: 'en',
+                toLanguage: 'et',
+                createdAt: new Date().toISOString(),
+                folderId: 'favorites',
+                isFavorite: true,
+                image_url: currentCardData.image_url,
+                audio_url: currentCardData.audio_url,
+                description: currentCardData.description
+            }
+
+            // Check if card already exists in favorites
+            const existingFavoriteIndex = allCards.findIndex(
+                (card: any) => card.id === currentCardData.id && card.folderId === 'favorites'
+            )
+
+            if (existingFavoriteIndex === -1) {
+                // Add to favorites
+                allCards.push(newCard)
+                // Update local state
+                const updatedCards = [...cards]
+                updatedCards[currentCard] = { ...currentCardData, isFavorite: true }
+                setCards(updatedCards)
+            } else {
+                // Remove from favorites
+                allCards.splice(existingFavoriteIndex, 1)
+                // Update local state
+                const updatedCards = [...cards]
+                updatedCards[currentCard] = { ...currentCardData, isFavorite: false }
+                setCards(updatedCards)
+            }
+
+            // Save updated cards
+            await AsyncStorage.setItem('flashcards', JSON.stringify(allCards))
+        } catch (error) {
+            console.error('Error toggling favorite:', error)
+        }
+    }
 
     const nextCard = () => {
         if (isAudioPlaying) return
@@ -45,7 +101,6 @@ const CardsLesson: React.FC<Props> = (props: Props) => {
             return
         }
         setCurrentCard(currentCard + 1)
-        rotation.value = withTiming(0, { duration: 500 })
     }
 
     const prevCard = () => {
@@ -53,65 +108,28 @@ const CardsLesson: React.FC<Props> = (props: Props) => {
         setCurrentCard(currentCard - 1)
     }
 
-    const flipCard = () => {
-        if (flipped) {
-            rotation.value = withTiming(0, { duration: 500 })
-        } else {
-            rotation.value = withTiming(180, { duration: 500 })
-        }
-        setFlipped(!flipped)
-    }
-
-    const frontAnimatedStyle = useAnimatedStyle(() => ({
-        transform: [{ rotateY: `${rotation.value}deg` }],
-        opacity: rotation.value < 90 ? 1 : 0,
-    }))
-
-    const backAnimatedStyle = useAnimatedStyle(() => ({
-        transform: [{ rotateY: `${rotation.value - 180}deg` }],
-        opacity: rotation.value >= 90 ? 1 : 0,
-    }))
-
     return (
         <View style={styles.container}>
             <Text style={styles.text}>cards</Text>
-            <TouchableWithoutFeedback onPress={flipCard}>
-                <View style={styles.cardsContainer}>
-                    {/* Front Side */}
-                    <Animated.View style={[styles.card, frontAnimatedStyle]}>
-                        <Image
-                            source={{ uri: data[currentCard].image_url }}
-                            style={styles.image}
-                            onError={(error) =>
-                                console.error('Error loading image:', error)
-                            }
-                        />
-                        <Text style={styles.word}>{data[currentCard].to}</Text>
-                    </Animated.View>
-
-                    {/* Back Side */}
-                    <Animated.View
-                        style={[
-                            styles.card,
-                            styles.backCard,
-                            backAnimatedStyle,
-                        ]}
-                    >
-                        <Text style={styles.word}>
-                            {data[currentCard].from}
-                        </Text>
-                        <View style={styles.divider}></View>
-                        <Text style={styles.description}>
-                            {data[currentCard].description}
-                        </Text>
-                    </Animated.View>
-                </View>
-            </TouchableWithoutFeedback>
+            <FlipCard
+                frontContent={{
+                    imageUrl: cards[currentCard].image_url,
+                    text: cards[currentCard].to,
+                }}
+                backContent={{
+                    text: cards[currentCard].from,
+                    description: cards[currentCard].description,
+                }}
+            />
             <View style={styles.bottomContainer}>
-                <SoundButton
-                    audioUrl={data[currentCard].audio_url}
-                    onPlayingStateChange={setIsAudioPlaying}
-                />
+                <View style={styles.controlsContainer}>
+                    <SoundButton
+                        audioUrl={cards[currentCard].audio_url}
+                        onPlayingStateChange={setIsAudioPlaying}
+                    />
+                 
+                </View>
+                
                 {currentCard === data.length - 1 ? (
                     <>
                         {currentCard > 0 && (
@@ -143,12 +161,22 @@ const CardsLesson: React.FC<Props> = (props: Props) => {
                         />
                     </>
                 )}
+                   <TouchableOpacity
+                        style={styles.favoriteButton}
+                        onPress={toggleFavorite}
+                        disabled={isAudioPlaying}
+                    >
+                        <Ionicons 
+                            name={cards[currentCard].isFavorite ? "star" : "star-outline"} 
+                            size={28} 
+                            color={cards[currentCard].isFavorite ? "#FFD700" : Colors.light.itemsColor} 
+                        />
+                    </TouchableOpacity>
             </View>
+            
         </View>
     )
 }
-
-export default CardsLesson
 
 const styles = StyleSheet.create({
     container: {
@@ -162,93 +190,25 @@ const styles = StyleSheet.create({
         marginBottom: 20,
         opacity: 0.8,
     },
-    cardsContainer: {
-        width: ITEM_WIDTH,
-        height: ITEM_HEIGHT,
-        alignSelf: 'center',
-        perspective: '1000px',
-    },
-    card: {
-        position: 'absolute',
+    bottomContainer: {
         width: '100%',
-        height: '100%',
-        alignItems: 'center',
+        flexDirection: 'row',
         justifyContent: 'space-around',
-        backgroundColor: Colors.light.cardsBackground,
-        backfaceVisibility: 'hidden',
-        borderRadius: 20,
-        borderWidth: 2,
-        borderColor: 'gray',
-        padding: 20,
+        alignItems: 'center', 
+        paddingHorizontal: 5,
+        gap: 10,
+        marginTop: 20,
     },
-    backCard: {
-        backgroundColor: Colors.light.cardsBackground,
-        transform: [{ rotateY: '180deg' }],
+    controlsContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 10,
+    },
+    favoriteButton: {
+        padding: 8,
+        alignItems: 'center',
         justifyContent: 'center',
     },
-    image: {
-        width: 220,
-        aspectRatio: 1,
-        resizeMode: 'contain',
-        borderRadius: 10,
-    },
-    word: {
-        fontSize: 24,
-        color: Colors.light.text,
-        fontWeight: 'bold',
-        marginBottom: 10,
-        textAlign: 'center',
-    },
-    divider: {
-        width: '60%',
-        height: 2,
-        backgroundColor: Colors.light.itemsColor,
-        marginVertical: 10,
-    },
-    description: {
-        fontSize: 18,
-        textAlign: 'center',
-        paddingHorizontal: 10,
-        color: Colors.light.itemsColor,
-    },
-    buttonContainer: {
-        marginTop: 20,
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        width: '100%',
-    },
-    starIcon: {
-        color: Colors.light.gold,
-    },
-    starButton: {
-        padding: 10,
-        borderRadius: 10,
-    },
-    nextButton: {
-        alignSelf: 'flex-end',
-        padding: 15,
-        paddingHorizontal: 25,
-        borderRadius: 10,
-        backgroundColor: Colors.light.itemsColor,
-        marginTop: 20,
-        shadowColor: '#000',
-        shadowOffset: {
-            width: 0,
-            height: 2,
-        },
-        shadowOpacity: 0.25,
-        shadowRadius: 3.84,
-        elevation: 5,
-    },
-    nextText: {
-        color: Colors.light.text,
-        fontSize: 16,
-        fontWeight: '600',
-    },
-    bottomContainer: {
-        marginTop: 20,
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-    },
 })
+
+export default CardsLesson

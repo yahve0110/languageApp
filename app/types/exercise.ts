@@ -12,6 +12,7 @@ export interface Card {
     image_url: string
     audio_url: string
     description: string
+    isFavorite?: boolean
 }
 
 export interface MultipleChoiceQuestion {

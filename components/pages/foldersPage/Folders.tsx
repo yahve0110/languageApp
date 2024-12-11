@@ -14,30 +14,78 @@ interface CardsListProps {
   folderId: string;
   folderName: string;
   onBack: () => void;
-  onUpdateFolder: (updatedFolder: Folder) => void; // Add this line
+  onUpdateFolder: (updatedFolder: Folder) => void;
+  onTrainingModeChange: (isTrainingMode: boolean) => void;
 }
-export default function FoldersTab() {
+interface Props {
+  onTrainingModeChange: (isTraining: boolean) => void;
+  isTrainingMode: boolean;
+}
+
+export default function FoldersTab({ onTrainingModeChange, isTrainingMode }: Props) {
   const [folders, setFolders] = useState<Folder[]>([]);
   const [modalVisible, setModalVisible] = useState(false);
   const [newFolderName, setNewFolderName] = useState('');
   const [selectedFolder, setSelectedFolder] = useState<Folder | null>(null);
   const [isGridView, setIsGridView] = useState(false);
-  const [cards, setCards] = useState([]); // Add this line
 
   const loadFolders = async () => {
     try {
       const foldersData = await AsyncStorage.getItem('folders');
+      let existingFolders: Folder[] = [];
+      
       if (foldersData) {
-        setFolders(JSON.parse(foldersData));
+        existingFolders = JSON.parse(foldersData);
       }
+
+      // Check if Favorites folder exists
+      const hasFavorites = existingFolders.some(folder => folder.name === 'Favorites');
+      
+      if (!hasFavorites) {
+        // Create Favorites folder
+        const favoritesFolder: Folder = {
+          id: 'favorites',
+          name: 'Favorites',
+          cardCount: 0,
+        };
+        existingFolders = [favoritesFolder, ...existingFolders];
+        // Save updated folders
+        await AsyncStorage.setItem('folders', JSON.stringify(existingFolders));
+      }
+      
+      setFolders(existingFolders);
     } catch (error) {
       console.error('Error loading folders:', error);
     }
   };
 
+  const loadViewPreference = async () => {
+    try {
+      const viewType = await AsyncStorage.getItem('folderViewType');
+      if (viewType !== null) {
+        setIsGridView(viewType === 'grid');
+      }
+    } catch (error) {
+      console.error('Error loading view preference:', error);
+    }
+  };
+
+  const saveViewPreference = async (isGrid: boolean) => {
+    try {
+      await AsyncStorage.setItem('folderViewType', isGrid ? 'grid' : 'list');
+    } catch (error) {
+      console.error('Error saving view preference:', error);
+    }
+  };
+
   useEffect(() => {
     loadFolders();
+    loadViewPreference();
   }, []);
+
+  useEffect(() => {
+    onTrainingModeChange(isTrainingMode);
+  }, [isTrainingMode, onTrainingModeChange]);
 
   const addFolder = async () => {
     if (!newFolderName.trim()) {
@@ -154,7 +202,8 @@ export default function FoldersTab() {
         onBack={handleBack}
         onUpdateFolder={handleUpdateFolder}
         folderName={selectedFolder.name}
-        cards={cards} // Pass the cards prop here
+        onTrainingModeChange={onTrainingModeChange}
+        isTrainingMode={isTrainingMode}
       />
     );
   }
@@ -171,7 +220,11 @@ export default function FoldersTab() {
         </TouchableOpacity>
         <TouchableOpacity
           style={styles.viewToggle}
-          onPress={() => setIsGridView(!isGridView)}
+          onPress={() => {
+            const newGridView = !isGridView;
+            setIsGridView(newGridView);
+            saveViewPreference(newGridView);
+          }}
         >
           <Ionicons 
             name={isGridView ? "list" : "grid"} 
@@ -190,19 +243,22 @@ export default function FoldersTab() {
           </Text>
         </View>
       ) : (
-        <ScrollView
+        <ScrollView 
           style={styles.folderList}
-          showsVerticalScrollIndicator={false}
           contentContainerStyle={[
             styles.folderListContent,
             isGridView && styles.gridContainer
           ]}
         >
-          {folders.map((item) => (
-            <View key={item.id} style={[
-              isGridView ? styles.gridItem : styles.listItem,
-            ]}>
-              <FolderItem item={item} />
+          {folders.map((folder) => (
+            <View
+              key={folder.id}
+              style={[
+                styles.listItem,
+                isGridView && styles.gridItem
+              ]}
+            >
+              <FolderItem item={folder} />
             </View>
           ))}
         </ScrollView>
@@ -285,16 +341,17 @@ const styles = StyleSheet.create({
   gridContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    justifyContent: 'space-between',
-    paddingHorizontal: 10,
+    justifyContent: 'flex-start',
+    gap: 12,
+    paddingHorizontal: 16,
   },
   listItem: {
     width: '100%',
     marginBottom: 12,
   },
   gridItem: {
-    width: '48%',
-    marginBottom: 12,
+    width: (Dimensions.get('window').width - 32 - 24) / 3, // screen width - padding - total gap
+    marginBottom: 0,
   },
   folderItem: {
     backgroundColor: Colors.light.secondaryBackground,
@@ -305,7 +362,7 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
   },
   gridFolderItem: {
-    height: 160,
+    height: 140,
   },
   folderContent: {
     flexDirection: 'row',
