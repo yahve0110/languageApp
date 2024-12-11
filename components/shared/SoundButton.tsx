@@ -15,7 +15,7 @@ interface Props {
 
 export default function SoundButton({
     audioUrl,
-    size = 20,
+    size = 40,
     hide = false,
     autoPlay = false,
     onPlayingStateChange
@@ -93,12 +93,18 @@ export default function SoundButton({
 
     return (
         <TouchableOpacity
-            style={styles.soundButton}
+            style={[
+                styles.soundButton,
+                {
+                    width: size,
+                    height: size,
+                }
+            ]}
             onPress={handleSoundPress}
         >
             <FontAwesome
                 name={isPlaying ? "stop" : "volume-up"}
-                size={size}
+                size={size * 0.6}
                 color={Colors.light.text}
             />
         </TouchableOpacity>
@@ -107,9 +113,7 @@ export default function SoundButton({
 
 const styles = StyleSheet.create({
     soundButton: {
-        padding: 10,
         borderRadius: 100,
-        aspectRatio: 1,
         alignItems: 'center',
         justifyContent: 'center',
         backgroundColor: 'black',

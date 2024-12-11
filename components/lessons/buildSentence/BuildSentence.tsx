@@ -14,7 +14,14 @@ const BuildSentence = (props: Props) => {
     const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0)
     const [selectedWords, setSelectedWords] = useState<string[]>([])
     const [availableWords, setAvailableWords] = useState<string[]>(
-        data[0].options || []
+        [...(data[0].options || [])].sort(() => Math.random() - 0.5)
+    )
+    const [wordSlots, setWordSlots] = useState<(string | null)[]>(
+        [...(data[0].options || [])].sort(() => Math.random() - 0.5).map(word => word)
+    )
+    const [originalPositions, setOriginalPositions] = useState<{ [key: string]: number }>(
+        [...(data[0].options || [])].sort(() => Math.random() - 0.5)
+            .reduce((acc, word, index) => ({ ...acc, [word]: index }), {})
     )
     const [incorrectWords, setIncorrectWords] = useState<string[]>([])
     const [isCorrect, setIsCorrect] = useState(false)
@@ -23,10 +30,22 @@ const BuildSentence = (props: Props) => {
     const handleWordPress = (word: string, isFromSentence: boolean) => {
         if (isFromSentence) {
             setSelectedWords((prev) => prev.filter((w) => w !== word))
-            setAvailableWords((prev) => [...prev, word])
+            // Возвращаем слово на его оригинальную позицию
+            setWordSlots(prev => {
+                const newSlots = [...prev]
+                const originalIndex = newSlots.findIndex(slot => slot === null)
+                newSlots[originalIndex] = word
+                return newSlots
+            })
         } else {
             setSelectedWords((prev) => [...prev, word])
-            setAvailableWords((prev) => prev.filter((w) => w !== word))
+            // Помечаем позицию слова как пустую
+            setWordSlots(prev => {
+                const newSlots = [...prev]
+                const index = newSlots.findIndex(slot => slot === word)
+                newSlots[index] = null
+                return newSlots
+            })
         }
         setIncorrectWords([])
         setIsCorrect(false)
@@ -35,9 +54,13 @@ const BuildSentence = (props: Props) => {
 
     const moveToNextQuestion = () => {
         if (currentQuestionIndex < data.length - 1) {
+            const nextWords = [...(data[currentQuestionIndex + 1].options || [])].sort(() => Math.random() - 0.5)
             setCurrentQuestionIndex((prev) => prev + 1)
             setSelectedWords([])
-            setAvailableWords(data[currentQuestionIndex + 1].options || [])
+            setWordSlots(nextWords)
+            setOriginalPositions(
+                nextWords.reduce((acc, word, index) => ({ ...acc, [word]: index }), {})
+            )
             setIncorrectWords([])
             setIsCorrect(false)
             setPlayAudioAutomatically(false)
@@ -124,15 +147,20 @@ const BuildSentence = (props: Props) => {
             <View style={styles.bottomContainer}>
                 {/* Available words */}
                 <View style={styles.wordsContainer}>
-                    {availableWords.map((word, index) => (
-                        <TouchableOpacity
-                            key={`available-${index}`}
-                            style={styles.wordButton}
-                            onPress={() => handleWordPress(word, false)}
-                            disabled={isCorrect || incorrectWords.length > 0}
-                        >
-                            <Text style={styles.wordText}>{word}</Text>
-                        </TouchableOpacity>
+                    {wordSlots.map((word, index) => (
+                        word && (
+                            <TouchableOpacity
+                                key={`slot-${index}`}
+                                style={[
+                                    styles.wordButton,
+                                    !word && styles.emptySlot
+                                ]}
+                                onPress={() => word && handleWordPress(word, false)}
+                                disabled={isCorrect || incorrectWords.length > 0 || !word}
+                            >
+                                <Text style={styles.wordText}>{word}</Text>
+                            </TouchableOpacity>
+                        )
                     ))}
                 </View>
 
@@ -227,6 +255,9 @@ const styles = StyleSheet.create({
     },
     correctWordText: {
         color: 'white',
+    },
+    emptySlot: {
+        opacity: 0,
     },
 })
 

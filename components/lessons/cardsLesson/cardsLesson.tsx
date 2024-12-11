@@ -110,7 +110,7 @@ const CardsLesson: React.FC<Props> = (props: Props) => {
 
     return (
         <View style={styles.container}>
-            <Text style={styles.text}>cards</Text>
+            <Text style={styles.text}>Tap on card to see translation</Text>
             <FlipCard
                 frontContent={{
                     imageUrl: cards[currentCard].image_url,

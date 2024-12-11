@@ -46,11 +46,9 @@ export default function TabLayout() {
                 width: 0,
                 height: -2,
               },
-              shadowOpacity: 0.1,
-              shadowRadius: 2,
-              elevation: 5,
+          
               height: 60,
-              paddingBottom: 10,
+              paddingVertical: 10,
             },
             tabBarShowLabel: false,
             tabBarHideOnKeyboard: true,
@@ -86,18 +84,11 @@ export default function TabLayout() {
             name="flashcards"
             options={{
               tabBarIcon: ({ color }) => (
-                <TabBarIcon name="comments" color={color} />
+                <TabBarIcon name="graduation-cap" color={color} />
               ),
             }}
           />
-          <Tabs.Screen
-            name="translator"
-            options={{
-              tabBarIcon: ({ color }) => (
-                <TabBarIcon name="comments" color={color} />
-              ),
-            }}
-          />
+        
         </Tabs>
       </SafeAreaView>
     </>

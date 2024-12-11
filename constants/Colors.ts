@@ -12,6 +12,8 @@ export default {
         tabIconDefault: '#ccc',
         secondaryLight: '#e1e8f2',
         white: '#fff',
+        secondaryRed:"#801336",
+        secondaryGreen: "#CCEBD7",
     },
     dark: {
         text: '#dae7fe',
@@ -24,7 +26,8 @@ export default {
         itemsColor: '#d3b82f6',
         tabIconDefault: '#ccc',
         secondaryLight: '#e1e8f2',
-
+        secondaryRed:"#801336",
+        secondaryGreen: "#CCEBD7",
         color: '#c5c9cb',
     },
 }

@@ -1,32 +1,20 @@
-import { Stack, useLocalSearchParams } from 'expo-router'
-import { StatusBar, Text, View, StyleSheet } from 'react-native'
+import { Stack, useRouter } from 'expo-router'
+import { StatusBar, View, StyleSheet, Text, TouchableOpacity } from 'react-native'
 import Colors from '@/constants/Colors'
-import React, { useState, useCallback } from 'react'
+import React, { useState } from 'react'
+import { FontAwesome } from '@expo/vector-icons'
 
 type RootStackParamList = {
     [id: string]: { id: string } | undefined
 }
 
-export const ProgressContext = React.createContext<{
-    updateProgress: (value: number) => void
-}>({ updateProgress: () => {} })
-
 export default function LevelLayout(): React.JSX.Element {
-    const { progress } = useLocalSearchParams<{ progress: string }>()
-
-    const initialProgress =
-        progress && !isNaN(Number(progress)) ? Number(progress) : 0
-    const [currentProgress, setCurrentProgress] =
-        useState<number>(initialProgress)
-
-    const updateProgress = useCallback((value: number) => {
-        if (!isNaN(value) && value >= 0 && value <= 100) {
-            setCurrentProgress(value)
-        }
-    }, [])
+    const [lives, setLives] = useState(5)
+    const router = useRouter()
+    const lessonNumber = 5
 
     return (
-        <ProgressContext.Provider value={{ updateProgress }}>
+        <>
             <StatusBar
                 backgroundColor={Colors.light.secondaryBackground}
                 barStyle="light-content"
@@ -44,27 +32,37 @@ export default function LevelLayout(): React.JSX.Element {
                     },
                     header: () => (
                         <View style={styles.headerContainer}>
-                            <View style={styles.progressBarContainer}>
-                                <View
-                                    style={[
-                                        styles.progressBar,
-                                        {
-                                            width: `${currentProgress}%`,
-                                        },
-                                    ]}
+                            <TouchableOpacity 
+                                onPress={() => router.back()}
+                                style={styles.backButton}
+                            >
+                                <FontAwesome
+                                    name="arrow-left"
+                                    size={24}
+                                    color={Colors.light.color}
                                 />
+                            </TouchableOpacity>
+
+                            <View style={styles.rightContainer}>
+                                <Text style={styles.lessonNumber}>
+                                    {lessonNumber}
+                                </Text>
+                               
+                                    <FontAwesome
+                                        name="heart"
+                                        size={24}
+                                        color={Colors.light.red}
+                                        style={styles.heartIcon}
+                                    />
+                             
                             </View>
-                            <Text
-                                style={styles.progressText}
-                            >{`${currentProgress}% completed`}</Text>
                         </View>
                     ),
-                    statusBarTranslucent: false,
                 }}
             >
                 <Stack.Screen name="[id]" />
             </Stack>
-        </ProgressContext.Provider>
+        </>
     )
 }
 
@@ -74,23 +72,24 @@ const styles = StyleSheet.create({
         paddingTop: 16,
         paddingBottom: 8,
         paddingHorizontal: 16,
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
     },
-    progressBarContainer: {
-        height: 10,
-        backgroundColor: '#E0E0E0',
-        width: '100%',
-        borderRadius: 2,
-        overflow: 'hidden',
+    backButton: {
+        padding: 8,
     },
-    progressBar: {
-        height: 10,
-        backgroundColor: Colors.light.itemsColor,
-        borderRadius: 2,
+    rightContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
     },
-    progressText: {
-        marginTop: 8,
+    lessonNumber: {
         color: Colors.light.color,
-        fontSize: 14,
-        textAlign: 'center',
+        fontSize: 18,
+        fontWeight: 'bold',
+        marginRight: 8,
+    },
+    heartIcon: {
+        marginLeft: 4,
     },
 })

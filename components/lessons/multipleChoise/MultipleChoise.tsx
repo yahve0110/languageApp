@@ -25,7 +25,23 @@ export default function MultipleChoise({
     data: initialData,
     onComplete,
 }: Props) {
-    const [data, setData] = useState<MultipleChoiceQuestion[]>(initialData)
+    // Функция для перемешивания массива
+    const shuffleArray = <T,>(array: T[]): T[] => {
+        const shuffled = [...array]
+        for (let i = shuffled.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1))
+            ;[shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
+        }
+        return shuffled
+    }
+
+    // Перемешиваем варианты ответов в каждом вопросе при инициализации
+    const shuffledInitialData = initialData.map(question => ({
+        ...question,
+        translations: shuffleArray(question.translations)
+    }))
+
+    const [data, setData] = useState<MultipleChoiceQuestion[]>(shuffledInitialData)
     const [wordIndex, setWordIndex] = useState(0)
     const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null)
     const [isChecked, setIsChecked] = useState(false)
@@ -163,19 +179,21 @@ export default function MultipleChoise({
 
             <View style={styles.content}>
                 <View style={styles.variantsContainer}>
-                    {data[wordIndex].translations.map((translation) => (
-                        <Pressable
-                            key={translation}
-                            style={getVariantStyle(translation)}
-                            onPress={() =>
-                                !isChecked && handleAnswer(translation)
-                            }
-                        >
-                            <Text style={getTextStyle(translation)}>
-                                {translation}
-                            </Text>
-                        </Pressable>
-                    ))}
+                    {[...data[wordIndex].translations]
+                        .sort(() => Math.random() - 0.5)
+                        .map((translation) => (
+                            <Pressable
+                                key={translation}
+                                style={getVariantStyle(translation)}
+                                onPress={() =>
+                                    !isChecked && handleAnswer(translation)
+                                }
+                            >
+                                <Text style={getTextStyle(translation)}>
+                                    {translation}
+                                </Text>
+                            </Pressable>
+                        ))}
                 </View>
                 <Button
                     text={isChecked ? 'Далее' : 'Проверить'}
@@ -185,32 +203,44 @@ export default function MultipleChoise({
             </View>
 
             {isChecked && selectedAnswer === data[wordIndex].correctWord && (
-                <View
-                    style={[
-                        styles.popup,
-                        { backgroundColor: Colors.light.green },
-                    ]}
-                >
-                    <View style={styles.popupContent}>
-                        <Text style={styles.popupText}>Правильно!</Text>
-                        <SoundButton audioUrl={data[wordIndex].audio_url} />
+                <View style={styles.popupWrapper}>
+                    <View
+                        style={[
+                            styles.popup,
+                            { backgroundColor: Colors.light.secondaryGreen },
+                        ]}
+                    >
+                        <View style={styles.popupContent}>
+                            <Text style={[styles.popupText, { color: '#1B4332' }]}>
+                                Правильно!
+                            </Text>
+                        </View>
+                        <View style={styles.soundButtonContainer}>
+                            <SoundButton size={12} audioUrl={data[wordIndex].audio_url} />
+                        </View>
                     </View>
                 </View>
             )}
 
             {isChecked && selectedAnswer !== data[wordIndex].correctWord && (
-                <View
-                    style={[
-                        styles.popup,
-                        { backgroundColor: Colors.light.red },
-                    ]}
-                >
-                    <View style={styles.popupContent}>
-                        <Text style={styles.popupText}>Правильный ответ:</Text>
-                        <Text style={[styles.popupText, { fontWeight: '600' }]}>
-                            {data[wordIndex].correctWord}
-                        </Text>
-                        <SoundButton audioUrl={data[wordIndex].audio_url} />
+                <View style={styles.popupWrapper}>
+                    <View
+                        style={[
+                            styles.popup,
+                            { backgroundColor: Colors.light.red },
+                        ]}
+                    >
+                        <View style={styles.popupContent}>
+                            <Text style={[styles.popupText, { color: '#801336' }]}>
+                                Правильный ответ:
+                            </Text>
+                            <Text style={[styles.popupText, { color: '#801336', fontWeight: '600' }]}>
+                                {data[wordIndex].correctWord}
+                            </Text>
+                        </View>
+                        <View style={styles.soundButtonContainer}>
+                            <SoundButton size={12} audioUrl={data[wordIndex].audio_url} />
+                        </View>
                     </View>
                 </View>
             )}
@@ -263,11 +293,9 @@ const styles = StyleSheet.create({
     },
     correctVariant: {
         backgroundColor: Colors.light.green,
-        color: 'white',
     },
     incorrectVariant: {
         backgroundColor: Colors.light.red,
-        color: Colors.light.text,
     },
     variantText: {
         fontSize: 16,
@@ -279,29 +307,49 @@ const styles = StyleSheet.create({
         fontWeight: '600',
     },
     correctText: {
-        color: Colors.light.green,
+        color: Colors.light.text,
         fontWeight: '600',
     },
     incorrectText: {
-        color: Colors.light.red,
+        color: Colors.light.text,
         fontWeight: '600',
     },
-    popup: {
+    popupWrapper: {
         position: 'absolute',
         bottom: 80,
-        backgroundColor: Colors.light.itemsColor,
-        padding: 25,
-        borderRadius: 10,
         width: '90%',
-        textAlign: 'center',
+        shadowColor: '#000',
+        shadowOffset: {
+            width: 0,
+            height: 2,
+        },
+        shadowOpacity: 0.1,
+        shadowRadius: 8,
+        elevation: 5,
+    },
+    popup: {
+        padding: 35,
+        paddingRight: 55,
+        borderRadius: 16,
+        width: '100%',
     },
     popupContent: {
         alignItems: 'center',
-        gap: 10,
+        gap: 8,
+        width: '100%',
     },
     popupText: {
-        fontSize: 20,
+        fontSize: 18,
         textAlign: 'center',
-        color: Colors.light.text,
+        letterSpacing: 0.3,
+    },
+    soundButtonContainer: {
+        position: 'absolute',
+        top: 10,
+        right: 5,
+        zIndex: 1,
+        backgroundColor: 'rgba(255, 255, 255, 0.9)',
+        borderRadius: 20,
+        padding: 8,
     },
 })

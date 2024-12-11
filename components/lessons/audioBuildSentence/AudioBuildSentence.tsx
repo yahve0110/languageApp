@@ -10,10 +10,19 @@ interface Props {
 }
 
 const AudioBuildSentence: React.FC<Props> = ({ data, onComplete }) => {
+    const shuffleArray = <T,>(array: T[]): T[] => {
+        const shuffled = [...array];
+        for (let i = shuffled.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+        }
+        return shuffled;
+    };
+
     const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
     const [selectedWords, setSelectedWords] = useState<string[]>([]);
-    const [availableWords, setAvailableWords] = useState<string[]>(
-        data[0].options || []
+    const [wordSlots, setWordSlots] = useState<(string | null)[]>(() => 
+        shuffleArray(data[0].options || [])
     );
     const [incorrectWords, setIncorrectWords] = useState<string[]>([]);
     const [isCorrect, setIsCorrect] = useState(false);
@@ -22,10 +31,22 @@ const AudioBuildSentence: React.FC<Props> = ({ data, onComplete }) => {
     const handleWordPress = (word: string, isFromSentence: boolean) => {
         if (isFromSentence) {
             setSelectedWords((prev) => prev.filter((w) => w !== word));
-            setAvailableWords((prev) => [...prev, word]);
+            // Возвращаем слово на его оригинальную позицию
+            setWordSlots(prev => {
+                const newSlots = [...prev];
+                const originalIndex = newSlots.findIndex(slot => slot === null);
+                newSlots[originalIndex] = word;
+                return newSlots;
+            });
         } else {
             setSelectedWords((prev) => [...prev, word]);
-            setAvailableWords((prev) => prev.filter((w) => w !== word));
+            // Помечаем позицию слова как пустую
+            setWordSlots(prev => {
+                const newSlots = [...prev];
+                const index = newSlots.findIndex(slot => slot === word);
+                newSlots[index] = null;
+                return newSlots;
+            });
         }
         setIncorrectWords([]);
         setIsCorrect(false);
@@ -34,9 +55,10 @@ const AudioBuildSentence: React.FC<Props> = ({ data, onComplete }) => {
 
     const moveToNextQuestion = () => {
         if (currentQuestionIndex < data.length - 1) {
+            const nextWords = shuffleArray(data[currentQuestionIndex + 1].options || []);
             setCurrentQuestionIndex((prev) => prev + 1);
             setSelectedWords([]);
-            setAvailableWords(data[currentQuestionIndex + 1].options || []);
+            setWordSlots(nextWords);
             setIncorrectWords([]);
             setIsCorrect(false);
             setPlayAudioAutomatically(false);
@@ -51,15 +73,24 @@ const AudioBuildSentence: React.FC<Props> = ({ data, onComplete }) => {
             setIsCorrect(true);
             setPlayAudioAutomatically(true);
         } else {
-            const correctWords =
-                data[currentQuestionIndex].correctAnswer.split(' ');
+            const correctWords = data[currentQuestionIndex].correctAnswer.split(' ');
             const wrongWords = selectedWords.filter(
                 (word, index) => word !== correctWords[index]
             );
             setIncorrectWords(wrongWords);
 
             setTimeout(() => {
-                setAvailableWords((prev) => [...prev, ...selectedWords]);
+                // Возвращаем слова на их оригинальные позиции
+                setWordSlots(prev => {
+                    const newSlots = [...prev];
+                    selectedWords.forEach(word => {
+                        const emptyIndex = newSlots.findIndex(slot => slot === null);
+                        if (emptyIndex !== -1) {
+                            newSlots[emptyIndex] = word;
+                        }
+                    });
+                    return newSlots;
+                });
                 setSelectedWords([]);
                 setIncorrectWords([]);
             }, 2000);
@@ -67,9 +98,7 @@ const AudioBuildSentence: React.FC<Props> = ({ data, onComplete }) => {
     };
 
     useEffect(() => {
-        const correctAnswerWordCount =
-            data[currentQuestionIndex].correctAnswer.split(' ').length;
-
+        const correctAnswerWordCount = data[currentQuestionIndex].correctAnswer.split(' ').length;
         if (selectedWords.length === correctAnswerWordCount) {
             checkAnswer();
         }
@@ -79,37 +108,48 @@ const AudioBuildSentence: React.FC<Props> = ({ data, onComplete }) => {
 
     return (
         <View style={styles.container}>
-               <Text style={styles.title}>
+            <Text style={styles.title}>
                 Прослушайте предложение и соберите из данных слов
             </Text>
-            <SoundButton size={80} audioUrl={currentQuestion.audio_url} />
+            <SoundButton size={100} audioUrl={currentQuestion.audio_url} />
             <View style={styles.sentenceContainer}>
                 {selectedWords.map((word, index) => (
                     <TouchableOpacity
                         key={`selected-${index}`}
-                        style={[styles.wordButton,
+                        style={[
+                            styles.wordButton,
                             incorrectWords.includes(word) && styles.incorrectWord,
-                            isCorrect && styles.correctWord]}
+                            isCorrect && styles.correctWord
+                        ]}
                         onPress={() => handleWordPress(word, true)}
                         disabled={isCorrect || incorrectWords.length > 0}
                     >
-                        <Text style={[styles.wordText,
+                        <Text style={[
+                            styles.wordText,
                             incorrectWords.includes(word) && styles.incorrectWordText,
-                            isCorrect && styles.correctWordText]}>{word}</Text>
+                            isCorrect && styles.correctWordText
+                        ]}>
+                            {word}
+                        </Text>
                     </TouchableOpacity>
                 ))}
             </View>
 
-            <View style={styles.wordsContainer}> 
-                {availableWords.map((word, index) => (
-                    <TouchableOpacity
-                        key={`available-${index}`}
-                        style={styles.wordButton}
-                        onPress={() => handleWordPress(word, false)}
-                        disabled={isCorrect || incorrectWords.length > 0}
-                    >
-                        <Text style={styles.wordText}>{word}</Text>
-                    </TouchableOpacity>
+            <View style={styles.wordsContainer}>
+                {wordSlots.map((word, index) => (
+                    word && (
+                        <TouchableOpacity
+                            key={`slot-${index}`}
+                            style={[
+                                styles.wordButton,
+                                !word && styles.emptySlot
+                            ]}
+                            onPress={() => word && handleWordPress(word, false)}
+                            disabled={isCorrect || incorrectWords.length > 0 || !word}
+                        >
+                            <Text style={styles.wordText}>{word}</Text>
+                        </TouchableOpacity>
+                    )
                 ))}
             </View>
 
@@ -184,6 +224,9 @@ const styles = StyleSheet.create({
     },
     correctWordText: {
         color: 'white',
+    },
+    emptySlot: {
+        opacity: 0,
     },
 });
 
