@@ -8,6 +8,12 @@ import React, { useState, useEffect } from 'react'
 import { Dimensions, Text, View, StyleSheet, TouchableOpacity, TextInput, FlatList, Alert } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import AsyncStorage from '@react-native-async-storage/async-storage'
+import Animated, { 
+    SlideInRight, 
+    SlideOutLeft, 
+    SlideInLeft, 
+    SlideOutRight,
+} from 'react-native-reanimated'
 
 interface Props {
     data: Card[]
@@ -44,6 +50,8 @@ const CardsLesson: React.FC<Props> = (props: Props) => {
     const [isCreatingFolder, setIsCreatingFolder] = useState(false)
     const [newFolderName, setNewFolderName] = useState('')
     const [savedCards, setSavedCards] = useState<{[key: string]: boolean}>({})
+    const [direction, setDirection] = useState<'forward' | 'back'>('forward')
+    const [isCardFlipped, setIsCardFlipped] = useState(false)
 
     useEffect(() => {
         loadFolders()
@@ -193,12 +201,21 @@ const CardsLesson: React.FC<Props> = (props: Props) => {
             onComplete()
             return
         }
+        setDirection('forward')
         setCurrentCard(currentCard + 1)
     }
 
     const prevCard = () => {
         if (isAudioPlaying) return
+        setDirection('back')
         setCurrentCard(currentCard - 1)
+    }
+
+    const getAnimation = (type: 'entering' | 'exiting') => {
+        if (type === 'entering') {
+            return direction === 'forward' ? SlideInRight : SlideInLeft
+        }
+        return direction === 'forward' ? SlideOutLeft : SlideOutRight
     }
 
     const renderModalContent = () => (
@@ -268,16 +285,26 @@ const CardsLesson: React.FC<Props> = (props: Props) => {
     return (
         <View style={styles.container}>
             <Text style={styles.text}>Tap on card to see translation</Text>
-            <FlipCard
-                frontContent={{
-                    imageUrl: cards[currentCard].image_url,
-                    text: cards[currentCard].to,
-                }}
-                backContent={{
-                    text: cards[currentCard].from,
-                    description: cards[currentCard].description,
-                }}
-            />
+            <Animated.View
+                entering={getAnimation('entering')}
+                exiting={getAnimation('exiting')}
+                key={currentCard}
+                style={styles.cardContainer}
+            >
+                <FlipCard
+                    frontContent={{
+                        imageUrl: cards[currentCard].image_url,
+                        text: cards[currentCard].to,
+                    }}
+                    backContent={{
+                        text: cards[currentCard].from,
+                        description: cards[currentCard].description,
+                    }}
+                    width={width * 0.8}
+                    height={height * 0.6}
+                    onFlip={(flipped) => setIsCardFlipped(flipped)}
+                />
+            </Animated.View>
             <View style={styles.bottomContainer}>
                 <View style={styles.controlsContainer}>
                     <SoundButton
@@ -434,6 +461,12 @@ const styles = StyleSheet.create({
         textAlign: 'center',
         marginTop: 20,
         fontSize: 16,
+    },
+    cardContainer: {
+        flex: 1,
+        width: '100%',
+        justifyContent: 'center',
+        alignItems: 'center',
     },
 })
 

@@ -19,10 +19,6 @@ const BuildSentence = (props: Props) => {
     const [wordSlots, setWordSlots] = useState<(string | null)[]>(
         [...(data[0].options || [])].sort(() => Math.random() - 0.5).map(word => word)
     )
-    const [originalPositions, setOriginalPositions] = useState<{ [key: string]: number }>(
-        [...(data[0].options || [])].sort(() => Math.random() - 0.5)
-            .reduce((acc, word, index) => ({ ...acc, [word]: index }), {})
-    )
     const [incorrectWords, setIncorrectWords] = useState<string[]>([])
     const [isCorrect, setIsCorrect] = useState(false)
     const [playAudioAutomatically, setPlayAudioAutomatically] = useState(false)
@@ -30,16 +26,14 @@ const BuildSentence = (props: Props) => {
     const handleWordPress = (word: string, isFromSentence: boolean) => {
         if (isFromSentence) {
             setSelectedWords((prev) => prev.filter((w) => w !== word))
-            // Возвращаем слово на его оригинальную позицию
             setWordSlots(prev => {
                 const newSlots = [...prev]
-                const originalIndex = newSlots.findIndex(slot => slot === null)
-                newSlots[originalIndex] = word
+                const emptyIndex = newSlots.findIndex(slot => slot === null)
+                newSlots[emptyIndex] = word
                 return newSlots
             })
         } else {
             setSelectedWords((prev) => [...prev, word])
-            // Помечаем позицию слова как пустую
             setWordSlots(prev => {
                 const newSlots = [...prev]
                 const index = newSlots.findIndex(slot => slot === word)
@@ -58,9 +52,6 @@ const BuildSentence = (props: Props) => {
             setCurrentQuestionIndex((prev) => prev + 1)
             setSelectedWords([])
             setWordSlots(nextWords)
-            setOriginalPositions(
-                nextWords.reduce((acc, word, index) => ({ ...acc, [word]: index }), {})
-            )
             setIncorrectWords([])
             setIsCorrect(false)
             setPlayAudioAutomatically(false)
@@ -75,34 +66,38 @@ const BuildSentence = (props: Props) => {
             setIsCorrect(true)
             setPlayAudioAutomatically(true)
         } else {
-            const correctWords =
-                data[currentQuestionIndex].correctAnswer.split(' ')
-            const wrongWords = selectedWords.filter(
-                (word, index) => word !== correctWords[index]
-            )
-            setIncorrectWords(wrongWords)
+            // Mark all selected words as incorrect
+            setIncorrectWords(selectedWords)
 
+            // Wait for 1 second to show the red highlight
             setTimeout(() => {
-                setAvailableWords((prev) => [...prev, ...selectedWords])
+                // Return all words to the bottom container
+                selectedWords.forEach(word => {
+                    setWordSlots(prev => {
+                        const newSlots = [...prev]
+                        const emptyIndex = newSlots.findIndex(slot => slot === null)
+                        if (emptyIndex !== -1) {
+                            newSlots[emptyIndex] = word
+                        }
+                        return newSlots
+                    })
+                })
+                
+                // Clear selected words and incorrect words state
                 setSelectedWords([])
                 setIncorrectWords([])
-            }, 2000)
+            }, 1000)
         }
     }
 
-    // Automatically check answer when the correct number of words is selected
     useEffect(() => {
-        const correctAnswerWordCount =
-            data[currentQuestionIndex].correctAnswer.split(' ').length
-        
+        const correctAnswerWordCount = data[currentQuestionIndex].correctAnswer.split(' ').length
         if (selectedWords.length === correctAnswerWordCount) {
             checkAnswer()
         }
     }, [selectedWords])
 
     const currentQuestion = data[currentQuestionIndex]
-    const correctAnswerWordCount =
-        currentQuestion.correctAnswer.split(' ').length
 
     return (
         <View style={styles.container}>
@@ -114,7 +109,6 @@ const BuildSentence = (props: Props) => {
                     {currentQuestion.sentence}
                 </Text>
 
-                {/* Built sentence area */}
                 <View style={styles.sentenceContainer}>
                     {selectedWords.map((word, index) => (
                         <TouchableOpacity
@@ -122,18 +116,16 @@ const BuildSentence = (props: Props) => {
                             style={[
                                 styles.wordButton,
                                 styles.selectedWordButton,
-                                incorrectWords.includes(word) &&
-                                    styles.incorrectWord,
+                                incorrectWords.includes(word) && styles.incorrectWord,
                                 isCorrect && styles.correctWord,
                             ]}
                             onPress={() => handleWordPress(word, true)}
-                            disabled={isCorrect || incorrectWords.length > 0}
+                            disabled={isCorrect}
                         >
                             <Text
                                 style={[
                                     styles.wordText,
-                                    incorrectWords.includes(word) &&
-                                        styles.incorrectWordText,
+                                    incorrectWords.includes(word) && styles.incorrectWordText,
                                     isCorrect && styles.correctWordText,
                                 ]}
                             >
@@ -145,7 +137,6 @@ const BuildSentence = (props: Props) => {
             </View>
 
             <View style={styles.bottomContainer}>
-                {/* Available words */}
                 <View style={styles.wordsContainer}>
                     {wordSlots.map((word, index) => (
                         word && (
@@ -153,18 +144,23 @@ const BuildSentence = (props: Props) => {
                                 key={`slot-${index}`}
                                 style={[
                                     styles.wordButton,
-                                    !word && styles.emptySlot
+                                    !word && styles.emptySlot,
+                                    incorrectWords.includes(word) && styles.incorrectWord,
                                 ]}
                                 onPress={() => word && handleWordPress(word, false)}
-                                disabled={isCorrect || incorrectWords.length > 0 || !word}
+                                disabled={isCorrect || !word}
                             >
-                                <Text style={styles.wordText}>{word}</Text>
+                                <Text style={[
+                                    styles.wordText,
+                                    incorrectWords.includes(word) && styles.incorrectWordText
+                                ]}>
+                                    {word}
+                                </Text>
                             </TouchableOpacity>
                         )
                     ))}
                 </View>
 
-                {/* Conditionally render SoundButton only when correct and ready to play audio */}
                 {isCorrect && playAudioAutomatically && (
                     <SoundButton
                         autoPlay={true}
@@ -188,10 +184,10 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
     },
     topContainer: {
-        padding: 20,
+        padding: 5,
     },
     bottomContainer: {
-        padding: 20,
+        padding: 10,
         paddingBottom: 40,
         backgroundColor: Colors.light.background,
         borderTopLeftRadius: 20,
@@ -215,7 +211,6 @@ const styles = StyleSheet.create({
         flexWrap: 'wrap',
         justifyContent: 'flex-start',
         alignItems: 'center',
-        padding: 10,
         borderRadius: 10,
         backgroundColor: Colors.light.background,
         marginVertical: 20,

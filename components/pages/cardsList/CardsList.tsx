@@ -413,28 +413,6 @@ export default function CardsList({ folderId, folderName, onBack, onUpdateFolder
     setAnimationType(types[(currentIndex + 1) % types.length]);
   };
 
-  const renderTrainingCard = () => (
-    <Animated.View 
-      entering={getAnimation('entering')}
-      exiting={currentTrainingCard < cards.length - 1 ? getAnimation('exiting') : undefined}
-      key={currentTrainingCard}
-    >
-      <FlipCard
-        frontContent={{
-          imageUrl: cards[currentTrainingCard].image_url || standartCardImg,
-          text: cards[currentTrainingCard].word,
-        }}
-        backContent={{
-          text: cards[currentTrainingCard].translation,
-          description: cards[currentTrainingCard].description,
-        }}
-        width={width * 0.7}
-        height={height * 0.6}
-        onFlip={setIsCardFlipped}
-      />
-    </Animated.View>
-  );
-
   if (isTrainingMode && cards.length > 0) {
     const isFavoritesFolder = folderId === 'favorites';
     return (
@@ -445,6 +423,7 @@ export default function CardsList({ folderId, folderName, onBack, onUpdateFolder
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Training Mode</Text>
           <View style={styles.headerButtons}>
+          
             <TouchableOpacity style={styles.headerButton} onPress={shuffleCards}>
               <Ionicons name="shuffle" size={24} color={Colors.light.text} />
             </TouchableOpacity>
@@ -452,7 +431,24 @@ export default function CardsList({ folderId, folderName, onBack, onUpdateFolder
         </View>
         
         <View style={styles.trainingContainer}>
-          {renderTrainingCard()}
+          <Animated.View 
+            entering={getAnimation('entering')}
+            exiting={getAnimation('exiting')}
+            key={currentTrainingCard}
+          >
+            <FlipCard
+              frontContent={{
+                imageUrl: cards[currentTrainingCard].image_url || standartCardImg,
+                text: cards[currentTrainingCard].word,
+              }}
+              backContent={{
+                text: cards[currentTrainingCard].translation,
+                description: cards[currentTrainingCard].description,
+              }}
+              width={width * 0.7}
+              height={height * 0.6}
+            />
+          </Animated.View>
           
           <View style={styles.navigationContainer}>
             <View style={styles.navigationButton}>

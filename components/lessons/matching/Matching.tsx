@@ -18,12 +18,12 @@ const Matching = (props: Props) => {
     const [completedPairs, setCompletedPairs] = useState<Set<string>>(new Set())
     const [isError, setIsError] = useState(false)
 
-    const shuffledWordsFrom = useMemo(() => {
-        return [...data[0].wordsFrom].sort(() => Math.random() - 0.5)
+    const wordsFrom = useMemo(() => {
+        return data[0].wordsFrom
     }, [data])
 
-    const shuffledWordsTo = useMemo(() => {
-        return [...data[0].wordsTo].sort(() => Math.random() - 0.5)
+    const wordsTo = useMemo(() => {
+        return data[0].wordsTo
     }, [data])
 
     const playAudio = async (audioUrl: string) => {
@@ -87,27 +87,31 @@ const Matching = (props: Props) => {
         const isSelected = isWordSelected(word.id, side)
 
         return (
-            <TouchableOpacity
+            <View
                 key={`${side}-${word.id}`}
-                onPress={() => handleWordPress(word.id, side)}
-                style={[
-                    styles.wordButton,
-                    isSelected && styles.selectedWord,
-                    isCompleted && styles.completedWord,
-                    isError && isSelected && styles.errorWord,
-                ]}
-                disabled={isCompleted}
+                style={styles.wordContainer}
             >
-                <Text
+                <TouchableOpacity
+                    onPress={() => handleWordPress(word.id, side)}
                     style={[
-                        styles.wordText,
-                        isCompleted && styles.completedWordText,
+                        styles.wordButton,
+                        isSelected && styles.selectedWord,
+                        isCompleted && styles.completedWord,
+                        isError && isSelected && styles.errorWord,
                     ]}
-                    numberOfLines={1}
+                    disabled={isCompleted}
                 >
-                    {word.text}
-                </Text>
-            </TouchableOpacity>
+                    <Text
+                        style={[
+                            styles.wordText,
+                            isCompleted && styles.completedWordText,
+                        ]}
+                        numberOfLines={1}
+                    >
+                        {word.text}
+                    </Text>
+                </TouchableOpacity>
+            </View>
         )
     }
 
@@ -116,10 +120,10 @@ const Matching = (props: Props) => {
             <Text style={styles.titleText}>Подберите пару</Text>
             <View style={styles.wordsContainer}>
                 <View style={styles.column}>
-                    {shuffledWordsFrom.map((word) => renderWord(word, 'from'))}
+                    {wordsFrom.map((word) => renderWord(word, 'from'))}
                 </View>
                 <View style={styles.column}>
-                    {shuffledWordsTo.map((word) => renderWord(word, 'to'))}
+                    {wordsTo.map((word) => renderWord(word, 'to'))}
                 </View>
             </View>
         </View>
@@ -148,24 +152,19 @@ const styles = StyleSheet.create({
         flex: 1,
         marginHorizontal: 8,
     },
+    wordContainer: {
+        width: '100%',
+        marginVertical: 5,
+    },
     wordButton: {
-        height: 65,
-        backgroundColor: '#fff',
-        borderRadius: 12,
-        marginVertical: 6,
-        flexDirection: 'row',
+        backgroundColor: Colors.light.background,
+        borderRadius: 10,
+        padding: 10,
+        minWidth: '80%',
         alignItems: 'center',
         justifyContent: 'center',
-        shadowColor: '#000',
-        shadowOffset: {
-            width: 0,
-            height: 2,
-        },
-        shadowOpacity: 0.15,
-        shadowRadius: 3,
-        elevation: 3,
-        borderWidth: 2,
-        borderColor: '#E5E5E5',
+        borderWidth: 1,
+        borderColor: Colors.light.itemsColor,
     },
     selectedWord: {
         backgroundColor: '#E3EEFF',
