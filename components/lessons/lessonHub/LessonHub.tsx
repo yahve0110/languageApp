@@ -12,15 +12,16 @@ import {
 import VideoLesson from '@/components/lessons/videoLesson/VideoLesson'
 
 type Props = {
-    setshowHub: React.Dispatch<React.SetStateAction<boolean>>
+    setShowHub: React.Dispatch<React.SetStateAction<boolean>>
     setCurrentLessonType: React.Dispatch<React.SetStateAction<string>>
     data: LessonsData
     lessonId: string
     completedExercises: string[]
+    
 }
 
 const LessonHub = (props: Props) => {
-    const { setshowHub, setCurrentLessonType, completedExercises } = props
+    const { setShowHub, setCurrentLessonType, completedExercises } = props
     const [showVideo, setShowVideo] = useState(true)
     const { data, lessonId } = props
     const lessonData = data[lessonId]
@@ -40,7 +41,7 @@ return false
     const switchToLesson = (type: string, isLocked: boolean) => {
         if (isLocked) return
         setCurrentLessonType(type)
-        setshowHub(false)
+        setShowHub(false)
     }
 
     return (
@@ -74,7 +75,7 @@ return false
             >
                 <Text style={styles.lessonTitle}>{lessonData[1].title}</Text>
                 <TouchableOpacity
-                    onPress={() => setshowHub(false)}
+                    onPress={() => setShowHub(false)}
                 ></TouchableOpacity>
                 {lessonData[1].exercises?.map((ex: Exercise, index: number) => {
                     const isLocked = isExerciseLocked(index, lessonData[1].exercises)

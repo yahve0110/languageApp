@@ -1,15 +1,27 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, FlatList, Alert, TextInput, Dimensions } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, FlatList, Alert, TextInput, Dimensions, Modal } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import Colors from '@/constants/Colors';
 import FlipCard from '@/components/shared/FlipCard';
+import Animated, { 
+    SlideInRight, 
+    SlideOutLeft, 
+    SlideInLeft, 
+    SlideOutRight,
+    ZoomIn,
+    ZoomOut,
+    FadeIn,
+    FadeOut,
+    FlipInEasyX,
+    FlipOutEasyX
+} from 'react-native-reanimated';
 
 interface CardsListProps {
   folderId: string;
   folderName: string;
   onBack: () => void;
-  onUpdateFolder: (updatedFolder: any) => void;
+  onUpdateFolder: (updatedFolder: Folder) => void;
   onTrainingModeChange: (isTraining: boolean) => void;
   isTrainingMode: boolean;
 }
@@ -28,19 +40,34 @@ interface FlashCard {
   description?: string;
 }
 
+interface Folder {
+  id: string;
+  name: string;
+  createdAt: string;
+}
+
 const standartCardImg = "https://firebasestorage.googleapis.com/v0/b/keelefy.appspot.com/o/lesson1%2Fquestion.png?alt=media&token=c938f0ca-0bc8-4654-a0b4-66a6bd746a67"
 
 export default function CardsList({ folderId, folderName, onBack, onUpdateFolder, onTrainingModeChange, isTrainingMode }: CardsListProps) {
   const [cards, setCards] = useState<FlashCard[]>([]);
+  const [folders, setFolders] = useState<Folder[]>([]);
   const [editingCard, setEditingCard] = useState<string | null>(null);
   const [editedWord, setEditedWord] = useState('');
   const [editedTranslation, setEditedTranslation] = useState('');
   const [currentTrainingCard, setCurrentTrainingCard] = useState(0);
+  const [direction, setDirection] = useState<'forward' | 'back'>('forward');
+  const [animationType, setAnimationType] = useState<'slide' | 'zoom' | 'flip' | 'fade'>('slide');
+  const [isCardFlipped, setIsCardFlipped] = useState(false);
+  const [isSelectFolderModalVisible, setIsSelectFolderModalVisible] = useState(false);
+  const [selectedCard, setSelectedCard] = useState<FlashCard | null>(null);
+  const [newFolderName, setNewFolderName] = useState('');
+  const [isCreatingFolder, setIsCreatingFolder] = useState(false);
   const width = Dimensions.get('window').width;
   const height = Dimensions.get('window').height;
 
   useEffect(() => {
     loadCards();
+    loadFolders();
   }, []);
 
   const loadCards = async () => {
@@ -56,6 +83,17 @@ export default function CardsList({ folderId, folderName, onBack, onUpdateFolder
     }
   };
 
+  const loadFolders = async () => {
+    try {
+      const foldersJson = await AsyncStorage.getItem('folders');
+      if (foldersJson) {
+        setFolders(JSON.parse(foldersJson));
+      }
+    } catch (error) {
+      console.error('Error loading folders:', error);
+    }
+  };
+
   const deleteCard = async (cardId: string) => {
     Alert.alert(
       'Delete Card',
@@ -68,14 +106,25 @@ export default function CardsList({ folderId, folderName, onBack, onUpdateFolder
           onPress: async () => {
             try {
               const cardsJson = await AsyncStorage.getItem('flashcards');
-              if (cardsJson) {
+              const foldersJson = await AsyncStorage.getItem('folders');
+              
+              if (cardsJson && foldersJson) {
                 const allCards: FlashCard[] = JSON.parse(cardsJson);
+                const allFolders: Folder[] = JSON.parse(foldersJson);
+                
+                // Remove the card
                 const updatedCards = allCards.filter(card => card.id !== cardId);
                 await AsyncStorage.setItem('flashcards', JSON.stringify(updatedCards));
                 
-                const folder = allCards.find(card => card.folderId === folderId);
-                if (folder) {
-                  onUpdateFolder({ ...folder, cardCount: folder.cardCount - 1 });
+                // Update folder count
+                const currentFolder = allFolders.find(folder => folder.id === folderId);
+                if (currentFolder) {
+                  const updatedFolder = { ...currentFolder };
+                  const updatedFolders = allFolders.map(folder => 
+                    folder.id === folderId ? updatedFolder : folder
+                  );
+                  await AsyncStorage.setItem('folders', JSON.stringify(updatedFolders));
+                  onUpdateFolder(updatedFolder);
                 }
                 
                 setCards(cards.filter(card => card.id !== cardId));
@@ -133,12 +182,14 @@ export default function CardsList({ folderId, folderName, onBack, onUpdateFolder
 
   const nextTrainingCard = () => {
     if (currentTrainingCard < cards.length - 1) {
+      setDirection('forward');
       setCurrentTrainingCard(currentTrainingCard + 1);
     }
   };
 
   const prevTrainingCard = () => {
     if (currentTrainingCard > 0) {
+      setDirection('back');
       setCurrentTrainingCard(currentTrainingCard - 1);
     }
   };
@@ -154,48 +205,90 @@ export default function CardsList({ folderId, folderName, onBack, onUpdateFolder
   };
 
   const toggleFavorite = async (card: FlashCard) => {
+    setSelectedCard(card);
+    setIsSelectFolderModalVisible(true);
+  };
+
+  const saveToFolder = async (targetFolderId: string) => {
     try {
+      if (!selectedCard) return;
+
       const cardsJson = await AsyncStorage.getItem('flashcards');
-      if (cardsJson) {
+      const foldersJson = await AsyncStorage.getItem('folders');
+      
+      if (cardsJson && foldersJson) {
         const allCards: FlashCard[] = JSON.parse(cardsJson);
-        const cardIndex = allCards.findIndex(c => c.id === card.id);
+        const allFolders: Folder[] = JSON.parse(foldersJson);
         
-        if (cardIndex !== -1) {
-          // Toggle the favorite status
-          allCards[cardIndex].isFavorite = !allCards[cardIndex].isFavorite;
-          
-          // If card is now favorite, add it to Favorites folder
-          if (allCards[cardIndex].isFavorite) {
-            const favCard = { ...allCards[cardIndex] };
-            favCard.folderId = 'favorites';
-            allCards.push(favCard);
-          } else {
-            // Remove from favorites folder
-            const favIndex = allCards.findIndex(c => c.id === card.id && c.folderId === 'favorites');
-            if (favIndex !== -1) {
-              allCards.splice(favIndex, 1);
-            }
-          }
-          
-          // Save updated cards
-          await AsyncStorage.setItem('flashcards', JSON.stringify(allCards));
-          
-          // Update local state
-          const updatedCards = allCards.filter(c => c.folderId === folderId);
-          setCards(updatedCards);
-          
-          // Update folder card count if we're in favorites folder
-          if (folderId === 'favorites') {
-            onUpdateFolder({
-              id: 'favorites',
-              name: 'Favorites',
-              cardCount: updatedCards.length
+        // Update card's folder
+        const updatedCards = allCards.map(card => 
+          card.id === selectedCard.id 
+            ? { ...card, folderId: targetFolderId }
+            : card
+        );
+        
+        // Update old folder count (decrease)
+        if (selectedCard.folderId) {
+          const oldFolder = allFolders.find(f => f.id === selectedCard.folderId);
+          if (oldFolder) {
+            allFolders.forEach(folder => {
+            
             });
           }
         }
+        
+        // Update new folder count (increase)
+        const newFolder = allFolders.find(f => f.id === targetFolderId);
+        if (newFolder) {
+          allFolders.forEach(folder => {
+          
+          });
+        }
+        
+        await AsyncStorage.setItem('flashcards', JSON.stringify(updatedCards));
+        await AsyncStorage.setItem('folders', JSON.stringify(allFolders));
+        
+        // Update UI
+        setCards(updatedCards.filter(card => card.folderId === folderId));
+        setFolders(allFolders);
+        
+        // Update parent component
+        const currentFolder = allFolders.find(f => f.id === folderId);
+        if (currentFolder) {
+          onUpdateFolder(currentFolder);
+        }
+        
+        setIsSelectFolderModalVisible(false);
+        Alert.alert('Success', 'Card saved to folder successfully!');
       }
     } catch (error) {
-      console.error('Error toggling favorite:', error);
+      console.error('Error saving to folder:', error);
+      Alert.alert('Error', 'Failed to save card to folder');
+    }
+  };
+
+  const createNewFolder = async () => {
+    if (!newFolderName.trim()) {
+      Alert.alert('Error', 'Please enter a folder name');
+      return;
+    }
+
+    try {
+      const newFolder: Folder = {
+        id: Date.now().toString(),
+        name: newFolderName.trim(),
+        createdAt: new Date().toISOString(),
+       
+      };
+
+      const updatedFolders = [...folders, newFolder];
+      await AsyncStorage.setItem('folders', JSON.stringify(updatedFolders));
+      setFolders(updatedFolders);
+      setNewFolderName('');
+      setIsCreatingFolder(false);
+    } catch (error) {
+      console.error('Error creating folder:', error);
+      Alert.alert('Error', 'Failed to create folder');
     }
   };
 
@@ -256,7 +349,7 @@ export default function CardsList({ folderId, folderName, onBack, onUpdateFolder
                 <Ionicons name="play-circle" size={22} color={Colors.light.itemsColor} />
               </TouchableOpacity>
               <TouchableOpacity
-                style={[styles.actionButton, styles.editButton]}
+                style={[styles.actionButton]}
                 onPress={() => startEditing(item)}
               >
                 <Ionicons name="pencil" size={22} color={Colors.light.itemsColor} />
@@ -286,6 +379,62 @@ export default function CardsList({ folderId, folderName, onBack, onUpdateFolder
     );
   };
 
+  const shuffleCards = () => {
+    const shuffledCards = [...cards].sort(() => Math.random() - 0.5);
+    setCards(shuffledCards);
+  };
+
+  const getAnimation = (type: 'entering' | 'exiting') => {
+    switch (animationType) {
+      case 'slide':
+        return type === 'entering' 
+          ? (direction === 'forward' ? SlideInRight : SlideInLeft).duration(300)
+          : (direction === 'forward' ? SlideOutLeft : SlideOutRight).duration(300);
+      case 'zoom':
+        return type === 'entering' 
+          ? ZoomIn.duration(300)
+          : ZoomOut.duration(300);
+      case 'flip':
+        return type === 'entering'
+          ? FlipInEasyX.duration(300)
+          : FlipOutEasyX.duration(300);
+      case 'fade':
+        return type === 'entering'
+          ? FadeIn.duration(300)
+          : FadeOut.duration(300);
+      default:
+        return type === 'entering' ? FadeIn : FadeOut;
+    }
+  };
+
+  const changeAnimation = () => {
+    const types: ('slide' | 'zoom' | 'flip' | 'fade')[] = ['slide', 'zoom', 'flip', 'fade'];
+    const currentIndex = types.indexOf(animationType);
+    setAnimationType(types[(currentIndex + 1) % types.length]);
+  };
+
+  const renderTrainingCard = () => (
+    <Animated.View 
+      entering={getAnimation('entering')}
+      exiting={currentTrainingCard < cards.length - 1 ? getAnimation('exiting') : undefined}
+      key={currentTrainingCard}
+    >
+      <FlipCard
+        frontContent={{
+          imageUrl: cards[currentTrainingCard].image_url || standartCardImg,
+          text: cards[currentTrainingCard].word,
+        }}
+        backContent={{
+          text: cards[currentTrainingCard].translation,
+          description: cards[currentTrainingCard].description,
+        }}
+        width={width * 0.7}
+        height={height * 0.6}
+        onFlip={setIsCardFlipped}
+      />
+    </Animated.View>
+  );
+
   if (isTrainingMode && cards.length > 0) {
     const isFavoritesFolder = folderId === 'favorites';
     return (
@@ -295,22 +444,15 @@ export default function CardsList({ folderId, folderName, onBack, onUpdateFolder
             <Ionicons name="arrow-back" size={24} color={Colors.light.text} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Training Mode</Text>
-          <View style={{ width: 24 }} />
+          <View style={styles.headerButtons}>
+            <TouchableOpacity style={styles.headerButton} onPress={shuffleCards}>
+              <Ionicons name="shuffle" size={24} color={Colors.light.text} />
+            </TouchableOpacity>
+          </View>
         </View>
         
         <View style={styles.trainingContainer}>
-          <FlipCard
-            frontContent={{
-              imageUrl: cards[currentTrainingCard].image_url || standartCardImg,
-              text: cards[currentTrainingCard].word,
-            }}
-            backContent={{
-              text: cards[currentTrainingCard].translation,
-              description: cards[currentTrainingCard].description,
-            }}
-            width={width * 0.7}
-            height={height * 0.6}
-          />
+          {renderTrainingCard()}
           
           <View style={styles.navigationContainer}>
             <View style={styles.navigationButton}>
@@ -366,14 +508,20 @@ export default function CardsList({ folderId, folderName, onBack, onUpdateFolder
         </TouchableOpacity>
         <Text style={styles.title}>{folderName}</Text>
         {cards.length > 0 && (
-          <TouchableOpacity
-            style={styles.trainButton}
-            onPress={() => startTrainingFromCard(0)}
-          >
-            <Text style={styles.emptyStateSubtext}>Play</Text>
-
-            <Ionicons name="play-circle-outline" size={24} color={Colors.light.itemsColor} />
-          </TouchableOpacity>
+          <View style={styles.headerButtons}>
+            <TouchableOpacity
+              style={styles.actionButton}
+              onPress={shuffleCards}
+            >
+              <Ionicons name="shuffle" size={24} color={Colors.light.itemsColor} />
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.actionButton}
+              onPress={() => startTrainingFromCard(0)}
+            >
+              <Ionicons name="play-circle-outline" size={24} color={Colors.light.itemsColor} />
+            </TouchableOpacity>
+          </View>
         )}
       </View>
       
@@ -390,6 +538,86 @@ export default function CardsList({ folderId, folderName, onBack, onUpdateFolder
           contentContainerStyle={styles.listContainer}
         />
       )}
+      <Modal
+        visible={isSelectFolderModalVisible}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setIsSelectFolderModalVisible(false)}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Save to Folder</Text>
+              <TouchableOpacity
+                style={styles.modalCloseButton}
+                onPress={() => setIsSelectFolderModalVisible(false)}
+              >
+                <Ionicons name="close" size={24} color={Colors.light.text} />
+              </TouchableOpacity>
+            </View>
+
+            {isCreatingFolder ? (
+              <View style={styles.createFolderContainer}>
+                <TextInput
+                  style={styles.createFolderInput}
+                  value={newFolderName}
+                  onChangeText={setNewFolderName}
+                  placeholder="Enter folder name"
+                  placeholderTextColor={Colors.light.color}
+                  autoCapitalize="none"
+                  autoFocus
+                />
+                <View style={styles.createFolderButtons}>
+                  <TouchableOpacity
+                    style={[styles.createFolderButton, styles.cancelButton]}
+                    onPress={() => {
+                      setIsCreatingFolder(false);
+                      setNewFolderName('');
+                    }}
+                  >
+                    <Text style={styles.createFolderButtonText}>Cancel</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.createFolderButton, styles.confirmButton]}
+                    onPress={createNewFolder}
+                  >
+                    <Text style={styles.createFolderButtonText}>Create</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            ) : (
+              <>
+                <TouchableOpacity
+                  style={styles.createFolderButton}
+                  onPress={() => setIsCreatingFolder(true)}
+                >
+                  <Ionicons name="add-circle-outline" size={24} color={Colors.light.itemsColor} />
+                  <Text style={styles.createFolderButtonText}>Create New Folder</Text>
+                </TouchableOpacity>
+
+                <FlatList
+                  data={folders}
+                  keyExtractor={(item) => item.id}
+                  renderItem={({ item }) => (
+                    <TouchableOpacity
+                      style={styles.folderItem}
+                      onPress={() => saveToFolder(item.id)}
+                    >
+                      <View style={styles.folderInfo}>
+                        <Ionicons name="folder-outline" size={24} color={Colors.light.itemsColor} />
+                        <Text style={styles.folderName}>{item.name}</Text>
+                      </View>
+                    </TouchableOpacity>
+                  )}
+                  ListEmptyComponent={
+                    <Text style={styles.emptyText}>No folders yet</Text>
+                  }
+                />
+              </>
+            )}
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -421,7 +649,12 @@ const styles = StyleSheet.create({
     color: Colors.light.text,
     flex: 1,
   },
-  trainButton: {
+  headerButtons: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  actionButton: {
     padding: 8,
   },
   listContainer: {
@@ -487,23 +720,16 @@ const styles = StyleSheet.create({
     marginTop: 12,
     gap: 8,
   },
-  actionButton: {
-    padding: 8,
-    borderRadius: 8,
-    backgroundColor: Colors.light.background,
-  },
-  editButton: {
-    borderWidth: 1,
-  },
+
   deleteButton: {
-    borderWidth: 1,
+   
   },
   saveButton: {
-    borderWidth: 1,
+   
     borderColor: '#E8F5E9',
   },
   cancelButton: {
-    borderWidth: 1,
+ 
     borderColor: '#FFE5E5',
   },
   playButton: {
@@ -573,5 +799,87 @@ const styles = StyleSheet.create({
     color: Colors.light.text,
     fontSize: 16,
     fontWeight: '500',
+  },
+  headerButton: {
+    padding: 4,
+  },
+  modalContainer: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    backgroundColor: Colors.light.background,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    padding: 20,
+    maxHeight: '80%',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: Colors.light.text,
+  },
+  modalCloseButton: {
+    padding: 5,
+  },
+  createFolderContainer: {
+    marginBottom: 20,
+  },
+  createFolderInput: {
+    backgroundColor: Colors.light.secondaryBackground,
+    borderRadius: 10,
+    padding: 15,
+    color: Colors.light.text,
+    marginBottom: 10,
+  },
+  createFolderButtons: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+  },
+  createFolderButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 15,
+    borderRadius: 10,
+    marginBottom: 10,
+  },
+
+  confirmButton: {
+    backgroundColor: Colors.light.itemsColor,
+  },
+  createFolderButtonText: {
+    color: Colors.light.text,
+    marginLeft: 10,
+  },
+  folderItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 15,
+    borderRadius: 10,
+    backgroundColor: Colors.light.secondaryBackground,
+    marginBottom: 10,
+  },
+  folderInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  folderName: {
+    color: Colors.light.text,
+    marginLeft: 10,
+    fontSize: 16,
+  },
+
+  emptyText: {
+    color: Colors.light.color,
+    textAlign: 'center',
+    marginTop: 20,
   },
 });

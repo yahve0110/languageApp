@@ -30,6 +30,7 @@ interface FlipCardProps {
     };
     width?: number;
     height?: number;
+    onFlip?: (isFlipped: boolean) => void;
 }
 
 const FlipCard: React.FC<FlipCardProps> = ({
@@ -37,6 +38,7 @@ const FlipCard: React.FC<FlipCardProps> = ({
     backContent,
     width = ITEM_WIDTH,
     height = ITEM_HEIGHT,
+    onFlip,
 }) => {
     const [flipped, setFlipped] = React.useState(false);
     const rotation = useSharedValue(0);
@@ -48,7 +50,16 @@ const FlipCard: React.FC<FlipCardProps> = ({
             rotation.value = withTiming(180, { duration: 500 });
         }
         setFlipped(!flipped);
+        onFlip?.(!flipped);
     };
+
+    React.useEffect(() => {
+        if (rotation.value !== 0) {
+            rotation.value = withTiming(0, { duration: 500 });
+            setFlipped(false);
+            onFlip?.(false);
+        }
+    }, [frontContent.text]); // Reset when card content changes
 
     const frontAnimatedStyle = useAnimatedStyle(() => ({
         transform: [{ rotateY: `${rotation.value}deg` }],

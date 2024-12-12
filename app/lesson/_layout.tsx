@@ -1,17 +1,33 @@
-import { Stack, useRouter } from 'expo-router'
+import { Stack, useRouter, useLocalSearchParams } from 'expo-router'
 import { StatusBar, View, StyleSheet, Text, TouchableOpacity } from 'react-native'
 import Colors from '@/constants/Colors'
 import React, { useState } from 'react'
 import { FontAwesome } from '@expo/vector-icons'
+import { LessonProvider, useLessonContext } from '@/context/LessonContext'
 
 type RootStackParamList = {
     [id: string]: { id: string } | undefined
 }
 
-export default function LevelLayout(): React.JSX.Element {
+function LevelLayoutContent(): React.JSX.Element {
     const [lives, setLives] = useState(5)
     const router = useRouter()
+    const { id } = useLocalSearchParams()
     const lessonNumber = 5
+    const { showHub, setShowHub } = useLessonContext()
+
+    const handleBack = () => {
+        if (!showHub) {
+            setShowHub(true)
+        } else {
+            const currentPath = router.canGoBack()
+            if (currentPath) {
+                router.back()
+            } else {
+                router.push(`/levels/${id}`)
+            }
+        }
+    }
 
     return (
         <>
@@ -20,7 +36,6 @@ export default function LevelLayout(): React.JSX.Element {
                 barStyle="light-content"
                 translucent={false}
             />
-
             <Stack
                 screenOptions={{
                     headerStyle: {
@@ -33,36 +48,49 @@ export default function LevelLayout(): React.JSX.Element {
                     header: () => (
                         <View style={styles.headerContainer}>
                             <TouchableOpacity 
-                                onPress={() => router.back()}
+                                onPress={handleBack}
                                 style={styles.backButton}
                             >
                                 <FontAwesome
-                                    name="arrow-left"
+                                    name="angle-left"
                                     size={24}
                                     color={Colors.light.color}
                                 />
+                                <Text style={styles.backText}>Back</Text>
                             </TouchableOpacity>
-
                             <View style={styles.rightContainer}>
                                 <Text style={styles.lessonNumber}>
                                     {lessonNumber}
                                 </Text>
-                               
-                                    <FontAwesome
-                                        name="heart"
-                                        size={24}
-                                        color={Colors.light.red}
-                                        style={styles.heartIcon}
-                                    />
-                             
+                                <FontAwesome
+                                    name="heart"
+                                    size={24}
+                                    color={Colors.light.red}
+                                    style={styles.heartIcon}
+                                />
                             </View>
                         </View>
                     ),
+                    presentation: 'modal',
+                    animation: 'slide_from_bottom',
                 }}
             >
-                <Stack.Screen name="[id]" />
+                <Stack.Screen 
+                    name="[id]"
+                    options={{
+                        presentation: 'card'
+                    }}
+                />
             </Stack>
         </>
+    )
+}
+
+export default function LevelLayout(): React.JSX.Element {
+    return (
+        <LessonProvider>
+            <LevelLayoutContent />
+        </LessonProvider>
     )
 }
 
@@ -78,6 +106,14 @@ const styles = StyleSheet.create({
     },
     backButton: {
         padding: 8,
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    backText: {
+        color: Colors.light.color,
+        fontSize: 18,
+        fontWeight: 'bold',
+        marginLeft: 8,
     },
     rightContainer: {
         flexDirection: 'row',

@@ -19,12 +19,12 @@ type Props = {
     currentLessonType: string
     lessonId: string
     data: LessonStep
-    setshowHub: React.Dispatch<React.SetStateAction<boolean>>
+    setShowHub: React.Dispatch<React.SetStateAction<boolean>>
     onComplete: () => void
 }
 
 const ExerciseSupervisor = (props: Props) => {
-    const { currentLessonType, lessonId, data, onComplete } = props
+    const { currentLessonType, lessonId, data, onComplete, setShowHub } = props
     const exerciseData =
         data.exercises.find((item: any) => item.type === currentLessonType)
             ?.data || []

@@ -2,15 +2,34 @@ import { Card } from '@/app/types/exercise'
 import ExerciseNavigationBtn from '@/components/shared/ExerciseNavigationBtn'
 import FlipCard from '@/components/shared/FlipCard'
 import SoundButton from '@/components/shared/SoundButton'
+import CustomModal from '@/components/shared/CustomModal'
 import Colors from '@/constants/Colors'
 import React, { useState, useEffect } from 'react'
-import { Dimensions, Text, View, StyleSheet, TouchableOpacity } from 'react-native'
+import { Dimensions, Text, View, StyleSheet, TouchableOpacity, TextInput, FlatList, Alert } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 
 interface Props {
     data: Card[]
     onComplete: () => void
+}
+
+interface Folder {
+    id: string;
+    name: string;
+}
+
+interface FlashCard {
+    id: string;
+    word: string;
+    translation: string;
+    fromLanguage: string;
+    toLanguage: string;
+    createdAt: string;
+    folderId?: string;
+    image_url?: string;
+    audio_url?: string;
+    description?: string;
 }
 
 const { width, height } = Dimensions.get('window')
@@ -20,77 +39,151 @@ const CardsLesson: React.FC<Props> = (props: Props) => {
     const [currentCard, setCurrentCard] = useState(0)
     const [isAudioPlaying, setIsAudioPlaying] = useState(false)
     const [cards, setCards] = useState<Card[]>(data)
+    const [isModalVisible, setIsModalVisible] = useState(false)
+    const [folders, setFolders] = useState<Folder[]>([])
+    const [isCreatingFolder, setIsCreatingFolder] = useState(false)
+    const [newFolderName, setNewFolderName] = useState('')
+    const [savedCards, setSavedCards] = useState<{[key: string]: boolean}>({})
 
-    // Check if cards are in favorites when component mounts
     useEffect(() => {
-        const checkFavorites = async () => {
-            try {
-                const cardsJson = await AsyncStorage.getItem('flashcards')
-                if (cardsJson) {
-                    const allCards = JSON.parse(cardsJson)
-                    // Update favorite status for each card
-                    const updatedCards = cards.map(card => ({
-                        ...card,
-                        isFavorite: allCards.some((fc: any) => 
-                            fc.id === card.id && fc.folderId === 'favorites'
-                        )
-                    }))
-                    setCards(updatedCards)
-                }
-            } catch (error) {
-                console.error('Error checking favorites:', error)
-            }
-        }
-        checkFavorites()
+        loadFolders()
+        loadSavedCards()
     }, [])
 
-    const toggleFavorite = async () => {
+    const loadFolders = async () => {
+        try {
+            const foldersJson = await AsyncStorage.getItem('folders')
+            if (foldersJson) {
+                setFolders(JSON.parse(foldersJson))
+            }
+        } catch (error) {
+            console.error('Error loading folders:', error)
+        }
+    }
+
+    const loadSavedCards = async () => {
+        try {
+            const cardsJson = await AsyncStorage.getItem('flashcards')
+            if (cardsJson) {
+                const allCards = JSON.parse(cardsJson)
+                const savedCardsMap: {[key: string]: boolean} = {}
+                allCards.forEach((card: FlashCard) => {
+                    savedCardsMap[card.word] = true
+                })
+                setSavedCards(savedCardsMap)
+            }
+        } catch (error) {
+            console.error('Error loading saved cards:', error)
+        }
+    }
+
+    const createNewFolder = async () => {
+        if (!newFolderName.trim()) {
+            Alert.alert('Error', 'Please enter a folder name')
+            return
+        }
+
+        try {
+            const newFolder: Folder = {
+                id: Date.now().toString(),
+                name: newFolderName.trim(),
+            }
+
+            const updatedFolders = [...folders, newFolder]
+            await AsyncStorage.setItem('folders', JSON.stringify(updatedFolders))
+            setFolders(updatedFolders)
+            setNewFolderName('')
+            setIsCreatingFolder(false)
+        } catch (error) {
+            console.error('Error creating folder:', error)
+            Alert.alert('Error', 'Failed to create folder')
+        }
+    }
+
+    const saveToFolder = async (folderId: string) => {
         try {
             const currentCardData = cards[currentCard]
-            // Get all flashcards
             const cardsJson = await AsyncStorage.getItem('flashcards')
             let allCards = cardsJson ? JSON.parse(cardsJson) : []
-            
-            // Create a new flashcard if it doesn't exist in favorites
-            const newCard = {
-                id: currentCardData.id,
+
+            // Check if card already exists in target folder
+            const existingInFolder = allCards.find(
+                (card: FlashCard) => card.word === currentCardData.to && card.folderId === folderId
+            )
+
+            if (existingInFolder) {
+                Alert.alert('Warning', 'This card is already in the selected folder')
+                setIsModalVisible(false)
+                return
+            }
+
+            // Create a new card instance for the target folder
+            const newCard: FlashCard = {
+                id: Date.now().toString(),
                 word: currentCardData.to,
                 translation: currentCardData.from,
-                fromLanguage: 'en',
-                toLanguage: 'et',
+                fromLanguage: 'et',
+                toLanguage: 'en',
                 createdAt: new Date().toISOString(),
-                folderId: 'favorites',
-                isFavorite: true,
+                folderId: folderId,
                 image_url: currentCardData.image_url,
                 audio_url: currentCardData.audio_url,
                 description: currentCardData.description
             }
 
-            // Check if card already exists in favorites
-            const existingFavoriteIndex = allCards.findIndex(
-                (card: any) => card.id === currentCardData.id && card.folderId === 'favorites'
-            )
+            // Add to target folder
+            allCards.push(newCard)
 
-            if (existingFavoriteIndex === -1) {
-                // Add to favorites
-                allCards.push(newCard)
-                // Update local state
-                const updatedCards = [...cards]
-                updatedCards[currentCard] = { ...currentCardData, isFavorite: true }
-                setCards(updatedCards)
-            } else {
-                // Remove from favorites
-                allCards.splice(existingFavoriteIndex, 1)
-                // Update local state
-                const updatedCards = [...cards]
-                updatedCards[currentCard] = { ...currentCardData, isFavorite: false }
-                setCards(updatedCards)
-            }
-
-            // Save updated cards
+            // Save changes
             await AsyncStorage.setItem('flashcards', JSON.stringify(allCards))
+            setSavedCards(prev => ({ ...prev, [currentCardData.to]: true }))
+
+            setIsModalVisible(false)
+            Alert.alert('Success', 'Card saved to folder successfully!')
         } catch (error) {
-            console.error('Error toggling favorite:', error)
+            console.error('Error saving to folder:', error)
+            Alert.alert('Error', 'Failed to save card to folder')
+        }
+    }
+
+    const removeFromFolder = async () => {
+        try {
+            const currentCardData = cards[currentCard]
+            const cardsJson = await AsyncStorage.getItem('flashcards')
+            if (!cardsJson) return
+
+            let allCards = JSON.parse(cardsJson)
+            
+            // Find the card
+            const cardToRemove = allCards.find(
+                (card: FlashCard) => card.word === currentCardData.to
+            )
+            
+            if (!cardToRemove) return
+
+            // Remove card from the list
+            allCards = allCards.filter((card: FlashCard) => card.word !== currentCardData.to)
+            
+            // Save changes
+            await AsyncStorage.setItem('flashcards', JSON.stringify(allCards))
+            
+            // Update saved cards state
+            const newSavedCards = { ...savedCards }
+            delete newSavedCards[currentCardData.to]
+            setSavedCards(newSavedCards)
+
+            Alert.alert('Success', 'Card removed from folder successfully!')
+        } catch (error) {
+            console.error('Error removing from folder:', error)
+            Alert.alert('Error', 'Failed to remove card from folder')
+        }
+    }
+
+    const toggleModal = () => {
+        if (savedCards[cards[currentCard].to]) {
+            removeFromFolder()
+        } else {
+            setIsModalVisible(!isModalVisible)
         }
     }
 
@@ -107,6 +200,70 @@ const CardsLesson: React.FC<Props> = (props: Props) => {
         if (isAudioPlaying) return
         setCurrentCard(currentCard - 1)
     }
+
+    const renderModalContent = () => (
+        <View>
+            {isCreatingFolder ? (
+                <View style={styles.createFolderContainer}>
+                    <TextInput
+                        style={styles.createFolderInput}
+                        value={newFolderName}
+                        onChangeText={setNewFolderName}
+                        placeholder="Enter folder name"
+                        placeholderTextColor={Colors.light.color}
+                        autoCapitalize="none"
+                        autoFocus
+                    />
+                    <View style={styles.createFolderButtons}>
+                        <TouchableOpacity
+                            style={[styles.createFolderButton, styles.cancelButton]}
+                            onPress={() => {
+                                setIsCreatingFolder(false)
+                                setNewFolderName('')
+                            }}
+                        >
+                            <Text style={styles.createFolderButtonText}>Cancel</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                            style={[styles.createFolderButton, styles.confirmButton]}
+                            onPress={createNewFolder}
+                        >
+                            <Text style={styles.createFolderButtonText}>Create</Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            ) : (
+                <>
+                    <TouchableOpacity
+                        style={styles.createFolderButton}
+                        onPress={() => setIsCreatingFolder(true)}
+                    >
+                        <Ionicons name="add-circle-outline" size={24} color={Colors.light.itemsColor} />
+                        <Text style={styles.createFolderButtonText}>Create New Folder</Text>
+                    </TouchableOpacity>
+
+                    <FlatList
+                        data={folders}
+                        keyExtractor={(item) => item.id}
+                        renderItem={({ item }) => (
+                            <TouchableOpacity
+                                style={styles.folderItem}
+                                onPress={() => saveToFolder(item.id)}
+                            >
+                                <View style={styles.folderInfo}>
+                                    <Ionicons name="folder-outline" size={24} color={Colors.light.itemsColor} />
+                                    <Text style={styles.folderName}>{item.name}</Text>
+                                </View>
+                            </TouchableOpacity>
+                        )}
+                        ListEmptyComponent={
+                            <Text style={styles.emptyText}>No folders yet</Text>
+                        }
+                    />
+                </>
+            )}
+        </View>
+    )
 
     return (
         <View style={styles.container}>
@@ -127,53 +284,64 @@ const CardsLesson: React.FC<Props> = (props: Props) => {
                         audioUrl={cards[currentCard].audio_url}
                         onPlayingStateChange={setIsAudioPlaying}
                     />
-                 
                 </View>
                 
-                {currentCard === data.length - 1 ? (
+                {!isModalVisible && (
                     <>
-                        {currentCard > 0 && (
-                            <ExerciseNavigationBtn
-                                onPress={prevCard}
-                                text={'prev'}
-                                disabled={isAudioPlaying}
-                            />
+                        {currentCard === data.length - 1 ? (
+                            <>
+                                {currentCard > 0 && (
+                                    <ExerciseNavigationBtn
+                                        onPress={prevCard}
+                                        text={'prev'}
+                                        disabled={isAudioPlaying}
+                                    />
+                                )}
+                                <ExerciseNavigationBtn
+                                    onPress={() => nextCard()}
+                                    text="Finish"
+                                    disabled={isAudioPlaying}
+                                />
+                            </>
+                        ) : (
+                            <>
+                                {currentCard > 0 && (
+                                    <ExerciseNavigationBtn
+                                        onPress={prevCard}
+                                        text="prev"
+                                        disabled={isAudioPlaying}
+                                    />
+                                )}
+                                <ExerciseNavigationBtn
+                                    onPress={() => nextCard()}
+                                    text={'next'}
+                                    disabled={isAudioPlaying}
+                                />
+                            </>
                         )}
-                        <ExerciseNavigationBtn
-                            onPress={() => nextCard()}
-                            text="Finish"
-                            disabled={isAudioPlaying}
-                        />
-                    </>
-                ) : (
-                    <>
-                        {currentCard > 0 && (
-                            <ExerciseNavigationBtn
-                                onPress={prevCard}
-                                text="prev"
-                                disabled={isAudioPlaying}
-                            />
-                        )}
-                        <ExerciseNavigationBtn
-                            onPress={() => nextCard()}
-                            text={'next'}
-                            disabled={isAudioPlaying}
-                        />
                     </>
                 )}
-                   <TouchableOpacity
-                        style={styles.favoriteButton}
-                        onPress={toggleFavorite}
-                        disabled={isAudioPlaying}
-                    >
-                        <Ionicons 
-                            name={cards[currentCard].isFavorite ? "star" : "star-outline"} 
-                            size={28} 
-                            color={cards[currentCard].isFavorite ? "#FFD700" : Colors.light.itemsColor} 
-                        />
-                    </TouchableOpacity>
+                <TouchableOpacity
+                    style={styles.favoriteButton}
+                    onPress={toggleModal}
+                    disabled={isAudioPlaying}
+                >
+                    <Ionicons 
+                        name={savedCards[cards[currentCard].to] ? "star" : "star-outline"}
+                        size={28} 
+                        color={savedCards[cards[currentCard].to] ? "#FFD700" : Colors.light.itemsColor}
+                    />
+                </TouchableOpacity>
             </View>
-            
+
+            <CustomModal
+                isVisible={isModalVisible}
+                onClose={toggleModal}
+                title="Save to Folder"
+                style={{ zIndex: 1000 }}
+            >
+                {renderModalContent()}
+            </CustomModal>
         </View>
     )
 }
@@ -208,6 +376,64 @@ const styles = StyleSheet.create({
         padding: 8,
         alignItems: 'center',
         justifyContent: 'center',
+    },
+    createFolderContainer: {
+        marginBottom: 20,
+    },
+    createFolderInput: {
+        backgroundColor: Colors.light.secondaryBackground,
+        borderRadius: 10,
+        padding: 15,
+        color: Colors.light.text,
+        marginBottom: 10,
+    },
+    createFolderButtons: {
+        flexDirection: 'row',
+        justifyContent: 'flex-end',
+        gap: 10,
+    },
+    createFolderButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        padding: 15,
+        borderRadius: 10,
+        marginBottom: 10,
+        backgroundColor: Colors.light.secondaryBackground,
+    },
+    cancelButton: {
+        backgroundColor: Colors.light.secondaryBackground,
+    },
+    confirmButton: {
+        backgroundColor: Colors.light.itemsColor,
+    },
+    createFolderButtonText: {
+        color: Colors.light.text,
+        marginLeft: 10,
+        fontSize: 16,
+    },
+    folderItem: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        padding: 15,
+        borderRadius: 10,
+        backgroundColor: Colors.light.secondaryBackground,
+        marginBottom: 10,
+    },
+    folderInfo: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    folderName: {
+        color: Colors.light.text,
+        marginLeft: 10,
+        fontSize: 16,
+    },
+    emptyText: {
+        color: Colors.light.color,
+        textAlign: 'center',
+        marginTop: 20,
+        fontSize: 16,
     },
 })
 

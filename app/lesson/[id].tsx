@@ -6,10 +6,11 @@ import { useLocalSearchParams } from 'expo-router'
 import { useEffect, useState } from 'react'
 import { BackHandler, StyleSheet, View } from 'react-native'
 import { LessonStep } from '../types/exercise'
+import { useLessonContext } from '@/context/LessonContext'
 
 export default function LessonScreen() {
     const params = useLocalSearchParams()
-    const [showHub, setshowHub] = useState(true)
+    const { showHub, setShowHub } = useLessonContext()
     const [currentLessonType, setCurrentLessonType] = useState('')
     const [completedExercises, setCompletedExercises] = useState<string[]>([])
 
@@ -27,7 +28,7 @@ export default function LessonScreen() {
             }
             return prev
         })
-        setshowHub(true)
+        setShowHub(true)
         setCurrentLessonType('')
     }
 
@@ -36,7 +37,7 @@ export default function LessonScreen() {
             'hardwareBackPress',
             () => {
                 if (!showHub) {
-                    setshowHub(true)
+                    setShowHub(true)
                     setCurrentLessonType('')
                     return true // Prevent default back button behavior
                 }
@@ -52,7 +53,7 @@ export default function LessonScreen() {
             {showHub ? (
                 <LessonHub
                     data={dataNew}
-                    setshowHub={setshowHub}
+                    setShowHub={setShowHub}
                     setCurrentLessonType={setCurrentLessonType}
                     lessonId={id as string}
                     completedExercises={completedExercises}
@@ -61,7 +62,7 @@ export default function LessonScreen() {
                 <ExerciseSupervisor
                     data={data}
                     currentLessonType={currentLessonType}
-                    setshowHub={setshowHub}
+                    setShowHub={setShowHub}
                     lessonId={id as string}
                     onComplete={() => handleExerciseComplete(currentLessonType)}
                 />

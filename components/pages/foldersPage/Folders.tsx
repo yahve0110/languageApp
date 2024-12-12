@@ -8,7 +8,6 @@ import CardsList from '../cardsList/CardsList';
 interface Folder {
   id: string;
   name: string;
-  cardCount: number;
 }
 interface CardsListProps {
   folderId: string;
@@ -46,10 +45,8 @@ export default function FoldersTab({ onTrainingModeChange, isTrainingMode }: Pro
         const favoritesFolder: Folder = {
           id: 'favorites',
           name: 'Favorites',
-          cardCount: 0,
         };
         existingFolders = [favoritesFolder, ...existingFolders];
-        // Save updated folders
         await AsyncStorage.setItem('folders', JSON.stringify(existingFolders));
       }
       
@@ -93,20 +90,19 @@ export default function FoldersTab({ onTrainingModeChange, isTrainingMode }: Pro
       return;
     }
 
-    const newFolder = {
-      id: Date.now().toString(),
-      name: newFolderName.trim(),
-      cardCount: 0,
-    };
-
     try {
+      const newFolder: Folder = {
+        id: Date.now().toString(),
+        name: newFolderName.trim(),
+      };
+
       const updatedFolders = [...folders, newFolder];
       await AsyncStorage.setItem('folders', JSON.stringify(updatedFolders));
       setFolders(updatedFolders);
       setModalVisible(false);
       setNewFolderName('');
     } catch (error) {
-      console.error('Error saving folder:', error);
+      console.error('Error creating folder:', error);
       Alert.alert('Error', 'Failed to create folder');
     }
   };
@@ -165,9 +161,6 @@ export default function FoldersTab({ onTrainingModeChange, isTrainingMode }: Pro
                 styles.folderName,
                 isGridView && styles.gridFolderName
               ]}>{item.name}</Text>
-              <Text style={styles.cardCount}>
-                {item.cardCount} {item.cardCount === 1 ? 'card' : 'cards'}
-              </Text>
             </View>
           </View>
           {!isGridView && (
@@ -403,10 +396,6 @@ const styles = StyleSheet.create({
   },
   gridFolderName: {
     textAlign: 'center',
-  },
-  cardCount: {
-    fontSize: 14,
-    color: Colors.light.itemsColor,
   },
   deleteButton: {
     padding: 8,
