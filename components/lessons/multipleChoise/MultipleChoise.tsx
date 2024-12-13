@@ -1,4 +1,3 @@
-import { MultipleChoiceQuestion } from '@/app/types/exercise'
 import Button from '@/components/shared/Button'
 import Colors from '@/constants/Colors'
 import { useEffect, useState } from 'react'
@@ -13,6 +12,7 @@ import {
 import Animated, { useSharedValue, withTiming } from 'react-native-reanimated'
 import SoundButton from '@/components/shared/SoundButton'
 import { Audio } from 'expo-av'
+import { MultipleChoiceQuestion } from '@/app/types/exercise'
 
 const { width, height } = Dimensions.get('window')
 
@@ -179,21 +179,19 @@ export default function MultipleChoise({
 
             <View style={styles.content}>
                 <View style={styles.variantsContainer}>
-                    {[...data[wordIndex].translations]
-                        .sort(() => Math.random() - 0.5)
-                        .map((translation) => (
-                            <Pressable
-                                key={translation}
-                                style={getVariantStyle(translation)}
-                                onPress={() =>
-                                    !isChecked && handleAnswer(translation)
-                                }
-                            >
-                                <Text style={getTextStyle(translation)}>
-                                    {translation}
-                                </Text>
-                            </Pressable>
-                        ))}
+                    {data[wordIndex].translations.map((translation) => (
+                        <Pressable
+                            key={translation}
+                            style={getVariantStyle(translation)}
+                            onPress={() =>
+                                !isChecked && handleAnswer(translation)
+                            }
+                        >
+                            <Text style={getTextStyle(translation)}>
+                                {translation}
+                            </Text>
+                        </Pressable>
+                    ))}
                 </View>
                 <Button
                     text={isChecked ? 'Далее' : 'Проверить'}

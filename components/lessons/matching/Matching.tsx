@@ -1,7 +1,7 @@
 import { MatchingQuestion } from '@/app/types/exercise'
 import Colors from '@/constants/Colors'
 import { Audio } from 'expo-av'
-import React, { useMemo, useState } from 'react'
+import React, { useMemo, useState, useEffect } from 'react'
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native'
 
 interface Props {
@@ -16,7 +16,24 @@ const Matching = (props: Props) => {
         side: 'from' | 'to'
     } | null>(null)
     const [completedPairs, setCompletedPairs] = useState<Set<string>>(new Set())
-    const [isError, setIsError] = useState(false)
+    const [errorWord, setErrorWord] = useState<{id: string, side: 'from' | 'to'} | null>(null);
+
+    const shuffleArray = <T extends any>(array: T[]): T[] => {
+        const shuffled = [...array];
+        for (let i = shuffled.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+        }
+        return shuffled;
+    };
+
+    const [shuffledWordsFrom, setShuffledWordsFrom] = useState(() => shuffleArray(data[0].wordsFrom));
+    const [shuffledWordsTo, setShuffledWordsTo] = useState(() => shuffleArray(data[0].wordsTo));
+
+    useEffect(() => {
+        setShuffledWordsFrom(shuffleArray(data[0].wordsFrom));
+        setShuffledWordsTo(shuffleArray(data[0].wordsTo));
+    }, [data]);
 
     const wordsFrom = useMemo(() => {
         return data[0].wordsFrom
@@ -68,45 +85,40 @@ const Matching = (props: Props) => {
                 setTimeout(onComplete, 500)
             }
         } else {
-            setIsError(true)
+            setErrorWord({ id, side })
             setTimeout(() => {
-                setIsError(false)
+                setErrorWord(null)
                 setSelectedWord(null)
-            }, 2000)
+            }, 1000)
         }
     }
 
     const isWordSelected = (id: string, side: 'from' | 'to') =>
         selectedWord?.id === id && selectedWord.side === side
 
-    const renderWord = (
-        word: { id: string; text: string },
-        side: 'from' | 'to'
-    ) => {
+    const renderWord = (word: { id: string; text: string; audio_url?: string }, side: 'from' | 'to') => {
+        const isSelected = selectedWord?.id === word.id && selectedWord.side === side
         const isCompleted = completedPairs.has(word.id)
-        const isSelected = isWordSelected(word.id, side)
-
+        const isError = errorWord?.id === word.id && errorWord.side === side
         return (
-            <View
-                key={`${side}-${word.id}`}
-                style={styles.wordContainer}
-            >
+            <View key={`${word.id}-${side}`} style={styles.wordContainer}>
                 <TouchableOpacity
-                    onPress={() => handleWordPress(word.id, side)}
                     style={[
                         styles.wordButton,
                         isSelected && styles.selectedWord,
                         isCompleted && styles.completedWord,
-                        isError && isSelected && styles.errorWord,
+                        isError && styles.errorWord,
                     ]}
+                    onPress={() => handleWordPress(word.id, side)}
                     disabled={isCompleted}
                 >
-                    <Text
+                    <Text 
                         style={[
-                            styles.wordText,
+                            styles.wordText, 
                             isCompleted && styles.completedWordText,
-                        ]}
-                        numberOfLines={1}
+                            isError && styles.errorText
+                        ]} 
+                        numberOfLines={2}
                     >
                         {word.text}
                     </Text>
@@ -120,10 +132,10 @@ const Matching = (props: Props) => {
             <Text style={styles.titleText}>Подберите пару</Text>
             <View style={styles.wordsContainer}>
                 <View style={styles.column}>
-                    {wordsFrom.map((word) => renderWord(word, 'from'))}
+                    {shuffledWordsFrom.map((word) => renderWord(word, 'from'))}
                 </View>
                 <View style={styles.column}>
-                    {wordsTo.map((word) => renderWord(word, 'to'))}
+                    {shuffledWordsTo.map((word) => renderWord(word, 'to'))}
                 </View>
             </View>
         </View>
@@ -133,62 +145,81 @@ const Matching = (props: Props) => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        padding: 10,
-        paddingBottom: 100,
     },
     titleText: {
-        fontSize: 20,
-        fontWeight: '600',
+        fontSize: 22,
+        fontWeight: '700',
         textAlign: 'center',
         marginBottom: 20,
         color: Colors.light.text,
     },
     wordsContainer: {
-        flex: 1,
         flexDirection: 'row',
         justifyContent: 'space-between',
+        alignItems: 'flex-start',
+        width: '100%',
+        paddingHorizontal: 2,
     },
     column: {
         flex: 1,
-        marginHorizontal: 8,
+        alignItems: 'center',
+        marginHorizontal: 6,
     },
     wordContainer: {
         width: '100%',
-        marginVertical: 5,
+        height: 70,
+        marginVertical: 4,
     },
     wordButton: {
-        backgroundColor: Colors.light.background,
-        borderRadius: 10,
-        padding: 10,
-        minWidth: '80%',
+        width: '100%',
+        height: '100%',
+        backgroundColor: 'white',
+        borderRadius: 12,
         alignItems: 'center',
         justifyContent: 'center',
-        borderWidth: 1,
+        borderWidth: 2,
         borderColor: Colors.light.itemsColor,
+        padding: 6,
+        shadowColor: "#000",
+        shadowOffset: {
+            width: 0,
+            height: 2,
+        },
+        shadowOpacity: 0.15,
+        shadowRadius: 3,
+        elevation: 3,
     },
     selectedWord: {
         backgroundColor: '#E3EEFF',
         borderColor: '#007AFF',
+        borderWidth: 2,
     },
     completedWord: {
         backgroundColor: '#E8F7EA',
         borderColor: '#34C759',
+        borderWidth: 2,
     },
     errorWord: {
-        backgroundColor: '#FFE5E5',
+        backgroundColor: '#FFF0F0',
         borderColor: '#FF3B30',
+        borderWidth: 2,
     },
     wordText: {
         fontSize: 16,
-        color: '#000',
-        fontWeight: '500',
+        color: "black",
         textAlign: 'center',
-        flex: 1,
+        fontWeight: '500',
+        width: '100%',
+        lineHeight: 24,
     },
     completedWordText: {
         color: '#34C759',
         fontWeight: '600',
     },
+    errorText: {
+        color: '#FF3B30',
+        fontWeight: '600',
+    }
 })
 
 export default Matching
