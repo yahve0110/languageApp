@@ -59,7 +59,7 @@ const Translator = () => {
     const [isSelectFolderModalVisible, setIsSelectFolderModalVisible] = useState(false);
     const [newFolderName, setNewFolderName] = useState('');
     const [isCreatingFolder, setIsCreatingFolder] = useState(false);
-    const OPENAI_API_KEY = 'sk-NuaTm51prqNsgZO3q7n51QHCfD1rknvfP5bx_xXY-lT3BlbkFJ2iA-kJkV8GwS1uaG5s4c46d4AgzmE89SihlF2lr5QA';
+    const OPENAI_API_KEY = process.env.EXPO_PUBLIC_OPENAI_API_KEY;
 
     const languages: { [key: string]: Language } = {
         et: { code: 'et', name: 'Estonian' },
